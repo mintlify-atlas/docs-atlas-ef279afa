@@ -1,0 +1,104 @@
+{
+  "projectType": "saas",
+  "projectName": "Countrysweb",
+  "projectDescription": "A web application for searching and exploring detailed information about countries worldwide",
+  "theme": "almond",
+  "primaryColor": "#fbc926",
+  "lightColor": "#8c73fa",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "features"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/installation",
+              "getting-started/quickstart",
+              "getting-started/configuration"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/search",
+              "features/country-details",
+              "features/history",
+              "features/border-navigation"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/architecture",
+              "development/components",
+              "development/context-api",
+              "development/routing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API",
+            "pages": [
+              "api/overview",
+              "api/country-endpoints"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "api/components/search",
+              "api/components/country-info",
+              "api/components/border-country",
+              "api/components/history"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-country-info",
+              "api/hooks/use-country"
+            ]
+          },
+          {
+            "group": "Context",
+            "pages": [
+              "api/context/country-provider",
+              "api/context/country-context"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Search countries by name or code",
+    "View detailed country information including flags, capitals, and population",
+    "Browse neighboring countries through border navigation",
+    "Track search history with localStorage persistence",
+    "Multilingual support (Spanish and English)"
+  ],
+  "publicApiSurface": [
+    "getAll() - Fetch all countries",
+    "getByName(name) - Fetch country by name",
+    "useCountryInfo(name) - Hook for country details",
+    "useCountry() - Hook for country context",
+    "CountryProvider - Context provider component",
+    "BuscadorCountry - Search component",
+    "CountryInfo - Country details component",
+    "BorderCountry - Border navigation component",
+    "HistoryComponent - Search history component"
+  ]
+}
