@@ -1,0 +1,377 @@
+---
+title: CountryProvider
+description: Context provider component for global country state management
+---
+
+## Overview
+
+The `CountryProvider` component is a React context provider that manages global state for countries, loading status, and search history. It fetches all countries on mount and persists history to localStorage.
+
+**Location:** `src/context/CountryProvider.jsx`
+
+## Component Signature
+
+```javascript
+export const CountryProvider = ({ children })
+```
+
+## Props
+
+<ParamField path="children" type="ReactNode" required>
+  Child components that will have access to the country context
+</ParamField>
+
+## Context Value
+
+Provides the following values to all descendant components:
+
+<ResponseField name="isLoading" type="boolean">
+  Global loading state for async operations
+  
+  **Initial value:** `true` (until countries are fetched)
+</ResponseField>
+
+<ResponseField name="setIsLoading" type="function">
+  Function to update loading state
+</ResponseField>
+
+<ResponseField name="countries" type="array">
+  Array of all countries from REST Countries API
+  
+  **Initial value:** `[]`
+</ResponseField>
+
+<ResponseField name="setCountries" type="function">
+  Function to update countries array
+</ResponseField>
+
+<ResponseField name="history" type="array">
+  Array of recently viewed countries (persisted in localStorage)
+  
+  **Initial value:** Loaded from `localStorage.getItem("history")` or `[]`
+</ResponseField>
+
+<ResponseField name="setHistory" type="function">
+  Function to update history (automatically syncs to localStorage)
+</ResponseField>
+
+## Usage
+
+```jsx
+import { CountryProvider } from "./context/CountryProvider";
+import { App } from "./App";
+
+function Root() {
+  return (
+    <CountryProvider>
+      <App />
+    </CountryProvider>
+  );
+}
+
+export default Root;
+```
+
+## Implementation
+
+```javascript src/context/CountryProvider.jsx
+import { useState, useEffect } from "react";
+import { CountryContext } from "./CountryContext";
+import { getAll } from "../api/country";
+import { Loading } from "../components/Loading";
+
+export const CountryProvider = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [countries, setCountries] = useState([]);
+  const [history, setHistory] = useState(() => {
+    return JSON.parse(localStorage.getItem("history")) || [];
+  });
+
+  // Fetch all countries on mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await getAll();
+        setCountries(res.data);
+      } catch (error) {
+        console.error("Error al obtener países:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Sync history to localStorage
+  useEffect(() => {
+    localStorage.setItem("history", JSON.stringify(history));
+  }, [history]);
+
+  return (
+    <CountryContext.Provider
+      value={{
+        isLoading,
+        setIsLoading,
+        countries,
+        setCountries,
+        history,
+        setHistory,
+      }}
+    >
+      <Loading />
+      {children}
+    </CountryContext.Provider>
+  );
+};
+```
+
+## Features
+
+### 1. Countries Fetching
+
+Automatically fetches all countries when the provider mounts:
+
+```javascript
+useEffect(() => {
+  const fetchCountries = async () => {
+    try {
+      const res = await getAll();
+      setCountries(res.data);
+    } catch (error) {
+      console.error("Error al obtener países:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchCountries();
+}, []);
+```
+
+**Behavior:**
+- Runs once on component mount (empty dependency array)
+- Calls the `getAll()` API function
+- Updates `countries` state with response data
+- Sets `isLoading` to `false` when complete (even if error occurs)
+- Logs errors to console
+
+### 2. History Persistence
+
+History is stored in localStorage and restored on load:
+
+```javascript
+// Initialize from localStorage
+const [history, setHistory] = useState(() => {
+  return JSON.parse(localStorage.getItem("history")) || [];
+});
+
+// Sync to localStorage on changes
+useEffect(() => {
+  localStorage.setItem("history", JSON.stringify(history));
+}, [history]);
+```
+
+**Benefits:**
+- History persists across browser sessions
+- Users can see their recent searches after closing/reopening the app
+- No backend required for history storage
+
+### 3. Loading Indicator
+
+Includes a global `<Loading />` component:
+
+```jsx
+<Loading />
+{children}
+```
+
+The `Loading` component likely checks `isLoading` from the context and displays a loading UI.
+
+## State Management
+
+### isLoading State
+
+<Tabs>
+  <Tab title="Initial Load">
+    ```javascript
+    // Provider mounts
+    isLoading = true
+    
+    // Countries fetch starts
+    // ...
+    
+    // Countries fetch completes
+    isLoading = false
+    ```
+  </Tab>
+  
+  <Tab title="Navigation">
+    ```javascript
+    // User searches for a country
+    setIsLoading(true)
+    navigate('/country/españa')
+    
+    // useCountryInfo fetches data
+    // ...
+    
+    // Country data loaded
+    setIsLoading(false)
+    ```
+  </Tab>
+</Tabs>
+
+### countries State
+
+```javascript
+// Initial
+countries = []
+
+// After API fetch
+countries = [
+  {
+    name: { common: "Spain", official: "Kingdom of Spain" },
+    capital: ["Madrid"],
+    flags: { svg: "...", png: "...", alt: "..." },
+    population: 47351567,
+    cca3: "ESP",
+    translations: { spa: { common: "España", official: "Reino de España" } }
+  },
+  // ... 249+ more countries
+]
+```
+
+### history State
+
+```javascript
+// Initial (from localStorage or empty)
+history = []
+
+// After viewing España
+history = [
+  {
+    name: "España",
+    flags: { svg: "...", alt: "..." }
+  }
+]
+
+// After viewing Francia
+history = [
+  {
+    name: "Francia",
+    flags: { svg: "...", alt: "..." }
+  },
+  {
+    name: "España",
+    flags: { svg: "...", alt: "..." }
+  }
+]
+```
+
+## Error Handling
+
+### API Fetch Errors
+
+```javascript
+try {
+  const res = await getAll();
+  setCountries(res.data);
+} catch (error) {
+  console.error("Error al obtener países:", error);
+} finally {
+  setIsLoading(false);  // Always clear loading state
+}
+```
+
+**Behavior:**
+- Errors are logged to console
+- Loading state is cleared even on error
+- `countries` remains empty array `[]`
+- App continues to function (no crash)
+
+### localStorage Errors
+
+If localStorage is unavailable or contains invalid JSON:
+
+```javascript
+const [history, setHistory] = useState(() => {
+  return JSON.parse(localStorage.getItem("history")) || [];
+});
+```
+
+- `JSON.parse(null)` throws error → Falls back to `[]`
+- Invalid JSON throws error → Should add try/catch for production
+
+**Recommended improvement:**
+
+```javascript
+const [history, setHistory] = useState(() => {
+  try {
+    return JSON.parse(localStorage.getItem("history")) || [];
+  } catch {
+    return [];
+  }
+});
+```
+
+## Provider Hierarchy
+
+Typical app structure:
+
+```jsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { CountryProvider } from "./context/CountryProvider";
+import App from "./App";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <BrowserRouter>
+      <CountryProvider>
+        <App />
+      </CountryProvider>
+    </BrowserRouter>
+  </StrictMode>
+);
+```
+
+## Performance Considerations
+
+### Initial Data Load
+
+- Fetches all ~250 countries on mount
+- Uses `fields` parameter to minimize payload size
+- Only fetches: `name,capital,flags,population,cca3,translations`
+
+### localStorage Operations
+
+- Reads from localStorage once (on mount)
+- Writes to localStorage on every history change
+- History is typically small (< 10 items)
+
+### Context Re-renders
+
+The provider re-renders when:
+- `isLoading` changes
+- `countries` changes (once, on initial load)
+- `history` changes (when user views a country)
+
+All consumers re-render on any context change. For optimization, consider splitting into multiple contexts.
+
+## Children Components
+
+```jsx
+<CountryContext.Provider value={{...}}>
+  <Loading />
+  {children}
+</CountryContext.Provider>
+```
+
+- `<Loading />` - Global loading indicator
+- `{children}` - App content (routes, components)
+
+## Related
+
+- [CountryContext](/api/context/country-context) - The context definition and useCountry hook
+- [useCountry Hook](/api/hooks/use-country) - Hook for accessing the context
+- [getAll API](/api/country-endpoints#getall) - API function used for initial data fetch
+- [HistoryComponent](/api/components/history) - Displays the persisted history

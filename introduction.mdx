@@ -1,0 +1,62 @@
+---
+title: Introduction
+description: Learn about Countrysweb, a modern React application for searching and exploring detailed information about countries worldwide
+---
+
+## What is Countrysweb?
+
+Countrysweb is a modern web application that allows users to search and explore detailed information about countries around the world. Built with React and Vite, it provides a fast and intuitive interface for discovering country data including capitals, populations, regions, languages, and neighboring countries.
+
+The application leverages the [REST Countries API](https://restcountries.com) to provide comprehensive and up-to-date information about over 250 countries.
+
+## Key capabilities
+
+Countrysweb enables users to:
+
+- **Search countries** by name (in English or Spanish) or by ISO country code (CCA3)
+- **View detailed information** including flags, coats of arms, capitals, regions, continents, and population statistics
+- **Explore neighboring countries** through interactive border navigation
+- **Track search history** with automatic local storage persistence
+- **Experience multilingual support** with Spanish translations for country names
+
+## Technology stack
+
+Countrysweb is built with modern web technologies:
+
+- **React 19** - UI library for building interactive interfaces
+- **Vite** - Fast build tool and development server
+- **React Router** - Client-side routing for seamless navigation
+- **Axios** - HTTP client for API requests
+- **Context API** - State management for global app state
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/getting-started/quickstart"
+  >
+    Get your local development environment up and running in minutes
+  </Card>
+  <Card
+    title="Features"
+    icon="stars"
+    href="/features/search"
+  >
+    Explore the key features and capabilities of Countrysweb
+  </Card>
+</CardGroup>
+
+## Architecture overview
+
+The application follows a component-based architecture:
+
+- **Context Provider** (`CountryProvider.jsx`) - Manages global state including country data and search history
+- **API Layer** (`api/country.js`) - Handles HTTP requests to the REST Countries API
+- **Routing** (`App.jsx`) - Defines application routes for home and country detail pages
+- **Components** - Modular, reusable UI components for search, display, and navigation
+
+<Info>
+The application uses localStorage to persist search history, ensuring users can track their recently viewed countries across sessions.
+</Info>

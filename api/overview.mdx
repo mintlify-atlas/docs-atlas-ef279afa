@@ -1,0 +1,96 @@
+---
+title: API Overview
+description: Complete reference for the REST Countries API integration and core API functions
+---
+
+## Introduction
+
+The Countrysweb application integrates with the [REST Countries API](https://restcountries.com) to fetch comprehensive country data. The API layer is built using Axios and provides a simple, type-safe interface for retrieving country information.
+
+## Axios Instance
+
+The application uses a configured Axios instance for all API calls:
+
+```javascript src/api/axios.js
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "https://restcountries.com/v3.1",
+});
+
+export default instance;
+```
+
+### Configuration
+
+<ParamField path="baseURL" type="string" default="https://restcountries.com/v3.1">
+  The base URL for all REST Countries API requests
+</ParamField>
+
+## Available API Functions
+
+The application provides two main API functions for fetching country data:
+
+### `getAll()`
+
+Fetches all countries with specific fields to optimize payload size.
+
+**Fields included:**
+- `name` - Country names in multiple languages
+- `capital` - Capital city
+- `flags` - Flag images (SVG and PNG)
+- `population` - Population count
+- `cca3` - ISO 3166-1 alpha-3 code
+- `translations` - Country name translations
+
+[View full documentation →](/api/country-endpoints#getall)
+
+### `getByName(name)`
+
+Fetches detailed information for a specific country by name.
+
+**Returns:** Complete country data including borders, languages, coat of arms, and more.
+
+[View full documentation →](/api/country-endpoints#getbyname)
+
+## API Response Structure
+
+All API responses follow the REST Countries v3.1 specification. The data includes:
+
+<Expandable title="Country Object Fields">
+  - **name**: Official and common names in multiple languages
+  - **translations**: Name translations (includes Spanish via `spa` key)
+  - **capital**: Array of capital cities
+  - **flags**: Object with `svg`, `png`, and `alt` properties
+  - **population**: Integer population count
+  - **cca3**: ISO 3166-1 alpha-3 code
+  - **region**: Geographic region (e.g., "Europe", "Asia")
+  - **continents**: Array of continents
+  - **borders**: Array of bordering country codes (cca3)
+  - **languages**: Object with language codes and names
+  - **coatOfArms**: Object with `svg` and `png` coat of arms images
+</Expandable>
+
+## Error Handling
+
+All API functions use async/await patterns. Errors should be handled with try/catch blocks:
+
+```javascript
+try {
+  const { data } = await getAll();
+  // Process data
+} catch (error) {
+  console.error("Error fetching countries:", error);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Country Endpoints" icon="globe" href="/api/country-endpoints">
+    Detailed documentation for all country API functions
+  </Card>
+  <Card title="Hooks" icon="code" href="/api/hooks/use-country-info">
+    React hooks that consume the API
+  </Card>
+</CardGroup>

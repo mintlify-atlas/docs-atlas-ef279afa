@@ -1,0 +1,275 @@
+---
+title: Border Navigation
+description: Navigate seamlessly between neighboring countries with one click
+---
+
+# Border Navigation
+
+The border navigation feature allows users to quickly explore neighboring countries by clicking on border country cards displayed on each country's details page.
+
+## How Border Navigation Works
+
+<Steps>
+  <Step title="View Country Details">
+    Navigate to any country's details page to see its information
+  </Step>
+  
+  <Step title="Check Borders Section">
+    Scroll to the "Fronteras" (Borders) section to see neighboring countries
+  </Step>
+  
+  <Step title="Click Border Country">
+    Click any border country card to navigate to that country's details
+  </Step>
+  
+  <Step title="Explore Connections">
+    Continue exploring from country to country through their shared borders
+  </Step>
+</Steps>
+
+## Border Lookup by CCA3 Code
+
+The application uses ISO 3166-1 alpha-3 (CCA3) codes to identify and link border countries:
+
+```jsx
+<h3>Fronteras:</h3>
+{!country.borders && <p>No tiene fronteras</p>}
+{country.borders && (
+  <ul className="borders-list">
+    {country.borders.map((border, index) => {
+      const bddata = countries.find((c) => c.cca3 === border);
+      return <BorderCountry key={index} country={bddata} />;
+    })}
+  </ul>
+)}
+```
+
+<Note>
+  The `country.borders` array contains CCA3 codes (e.g., ["BRA", "URY", "CHL"]). These codes are used to look up the full country data from the countries list.
+</Note>
+
+### CCA3 Code Examples
+
+| Country | CCA3 Code | Borders |
+|---------|-----------|----------|
+| Argentina | ARG | BRA, BOL, CHL, PRY, URY |
+| France | FRA | AND, BEL, DEU, ITA, LUX, MCO, ESP, CHE |
+| United States | USA | CAN, MEX |
+
+## BorderCountry Component
+
+The `BorderCountry` component renders each neighboring country as a clickable card:
+
+```jsx
+export const BorderCountry = ({ country }) => {
+  const navigate = useNavigate();
+
+  if (!country) return null;
+
+  const nameSpa = country.translations.spa.common;
+  const { png: flag, alt } = country.flags;
+
+  const handleSearchBorder = () => {
+    navigate(`/country/${String(nameSpa).toLowerCase()}`);
+  };
+
+  return (
+    <li className="border-country" onClick={handleSearchBorder}>
+      <img src={flag} alt={alt} />
+      <p>{nameSpa}</p>
+    </li>
+  );
+};
+```
+
+<AccordionGroup>
+  <Accordion title="Component Props">
+    **Input:** `country` object containing full country data
+    
+    **Required fields:**
+    - `translations.spa.common` - Spanish country name
+    - `flags.png` - Flag image URL
+    - `flags.alt` - Accessibility description
+  </Accordion>
+  
+  <Accordion title="Navigation Logic">
+    ```javascript
+    const handleSearchBorder = () => {
+      navigate(`/country/${String(nameSpa).toLowerCase()}`);
+    };
+    ```
+    
+    Converts the Spanish country name to lowercase and navigates to that country's detail page.
+  </Accordion>
+  
+  <Accordion title="Null Safety">
+    ```javascript
+    if (!country) return null;
+    ```
+    
+    The component gracefully handles cases where country data is not found.
+  </Accordion>
+</AccordionGroup>
+
+## Countries Without Borders
+
+Island nations and countries without land borders display a special message:
+
+<Tabs>
+  <Tab title="No Borders">
+    ```jsx
+    {!country.borders && <p>No tiene fronteras</p>}
+    ```
+    
+    When `country.borders` is `null` or `undefined`, the message "No tiene fronteras" (No borders) is displayed.
+  </Tab>
+  
+  <Tab title="Examples">
+    Countries without land borders include:
+    - **Island Nations:** Japan, United Kingdom, Australia, New Zealand, Cuba
+    - **Isolated Countries:** Iceland, Madagascar, Sri Lanka
+    - **Remote Islands:** Haiti, Dominican Republic (shares island)
+  </Tab>
+</Tabs>
+
+## Visual Design
+
+Each border country card displays:
+
+<CardGroup cols={2}>
+  <Card title="Flag Image" icon="flag">
+    PNG format flag for visual identification
+    
+    Uses `country.flags.png`
+  </Card>
+  
+  <Card title="Country Name" icon="globe">
+    Spanish common name for consistency
+    
+    Uses `country.translations.spa.common`
+  </Card>
+  
+  <Card title="Click Interaction" icon="mouse-pointer">
+    Entire card is clickable for easy navigation
+    
+    Hover effects improve discoverability
+  </Card>
+  
+  <Card title="Accessibility" icon="universal-access">
+    Alt text on images for screen readers
+    
+    Uses `country.flags.alt`
+  </Card>
+</CardGroup>
+
+## Navigation Flow Example
+
+Let's walk through a typical border navigation journey:
+
+<Steps>
+  <Step title="Start in Argentina">
+    User searches for "Argentina" and views its details page
+    
+    **Borders shown:** Brazil, Bolivia, Chile, Paraguay, Uruguay
+  </Step>
+  
+  <Step title="Click Brazil">
+    User clicks on the Brazil border card
+    
+    **Navigation:** `/country/brasil`
+    
+    **History updated:** [Brasil, Argentina]
+  </Step>
+  
+  <Step title="Explore Brazil's Borders">
+    Brazil's details page loads with its 10 neighboring countries
+    
+    **Borders shown:** Argentina, Bolivia, Colombia, French Guiana, Guyana, Paraguay, Peru, Suriname, Uruguay, Venezuela
+  </Step>
+  
+  <Step title="Continue Exploring">
+    User can continue clicking to explore the entire continent's connectivity
+  </Step>
+</Steps>
+
+## Integration with Search History
+
+Border navigation automatically updates the search history:
+
+<Note>
+  When you navigate via border countries, each country is added to your search history just as if you had searched for it directly. This allows you to easily return to countries you've visited during your exploration.
+</Note>
+
+```javascript
+// In useCountryInfo hook, after fetching country data:
+const log = {
+  name: paisData.translations.spa.common,
+  flags: paisData.flags,
+};
+setHistory((prev) => {
+  const lastOne = prev[0];
+  if (lastOne && lastOne.name === log.name) return prev;
+  const prevSet = prev.filter((c) => log.name !== c.name);
+  return [log, ...prevSet];
+});
+```
+
+See [Search History](/features/history) for more details on how history tracking works.
+
+## Performance Optimization
+
+The border lookup is optimized for performance:
+
+<Tabs>
+  <Tab title="Data Source">
+    ```javascript
+    const { country, countries } = useCountryInfo(name);
+    ```
+    
+    The full countries list is already loaded in memory from the `CountryProvider`, so border lookups are instantaneous.
+  </Tab>
+  
+  <Tab title="Find Operation">
+    ```javascript
+    const bddata = countries.find((c) => c.cca3 === border);
+    ```
+    
+    CCA3 code lookup is efficient as it's a simple string comparison.
+  </Tab>
+  
+  <Tab title="Conditional Rendering">
+    ```javascript
+    if (!country) return null;
+    ```
+    
+    Invalid border entries fail gracefully without breaking the UI.
+  </Tab>
+</Tabs>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Geographic Exploration" icon="compass">
+    Learn about regions by exploring connected countries
+    
+    Example: Explore all South American countries
+  </Card>
+  
+  <Card title="Educational Purpose" icon="graduation-cap">
+    Understand which countries share borders
+    
+    Example: Learn about European Union neighbors
+  </Card>
+  
+  <Card title="Travel Planning" icon="plane">
+    Discover neighboring countries for travel routes
+    
+    Example: Plan a multi-country road trip
+  </Card>
+  
+  <Card title="Research" icon="book">
+    Study geopolitical relationships
+    
+    Example: Analyze trade corridor countries
+  </Card>
+</CardGroup>

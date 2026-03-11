@@ -1,0 +1,505 @@
+---
+title: "Context API & State Management"
+description: "Learn how Countrysweb manages global state with React Context API"
+---
+
+## Overview
+
+Countrysweb uses React's Context API for global state management. This approach provides a simple, built-in solution for sharing data across components without prop drilling.
+
+<Note>
+  The application doesn't use Redux or other state management libraries. Context API is sufficient for this app's needs.
+</Note>
+
+## Context Architecture
+
+The state management is split into two files:
+
+1. **CountryContext.jsx** - Creates the context and custom hook
+2. **CountryProvider.jsx** - Provides the context value and business logic
+
+## CountryContext
+
+**Location**: `src/context/CountryContext.jsx`
+
+Defines the context and exports a custom hook for consuming it.
+
+```jsx CountryContext.jsx
+import { createContext, useContext } from "react";
+
+export const CountryContext = createContext();
+
+export const useCountry = () => useContext(CountryContext);
+```
+
+### useCountry Hook
+
+This custom hook simplifies context consumption:
+
+```jsx
+// Instead of:
+import { useContext } from "react";
+import { CountryContext } from "../context/CountryContext";
+const context = useContext(CountryContext);
+
+// You can use:
+import { useCountry } from "../context/CountryContext";
+const { countries, isLoading } = useCountry();
+```
+
+<Tip>
+  Always use the `useCountry` hook instead of `useContext(CountryContext)` directly. It's shorter and provides better error handling.
+</Tip>
+
+## CountryProvider
+
+**Location**: `src/context/CountryProvider.jsx`
+
+The provider component manages all global state and side effects.
+
+```jsx CountryProvider.jsx
+import { useState, useEffect } from "react";
+import { CountryContext } from "./CountryContext";
+import { getAll } from "../api/country";
+import { Loading } from "../components/Loading";
+
+export const CountryProvider = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [countries, setCountries] = useState([]);
+  const [history, setHistory] = useState(() => {
+    return JSON.parse(localStorage.getItem("history")) || [];
+  });
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await getAll();
+        setCountries(res.data);
+      } catch (error) {
+        console.error("Error al obtener países:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("history", JSON.stringify(history));
+  }, [history]);
+
+  return (
+    <CountryContext.Provider
+      value={{
+        isLoading,
+        setIsLoading,
+        countries,
+        setCountries,
+        history,
+        setHistory,
+      }}
+    >
+      <Loading />
+      {children}
+    </CountryContext.Provider>
+  );
+};
+```
+
+## Context Values
+
+The context provides the following values to all components:
+
+### State Values
+
+<CardGroup cols={2}>
+  <Card title="countries" icon="list">
+    Array of all country objects from API
+  </Card>
+  <Card title="isLoading" icon="spinner">
+    Boolean indicating if data is being fetched
+  </Card>
+  <Card title="history" icon="clock-rotate-left">
+    Array of recently viewed countries
+  </Card>
+</CardGroup>
+
+### Setter Functions
+
+<CardGroup cols={2}>
+  <Card title="setCountries" icon="pen-to-square">
+    Updates the countries array
+  </Card>
+  <Card title="setIsLoading" icon="toggle-on">
+    Controls the loading state
+  </Card>
+  <Card title="setHistory" icon="clock">
+    Updates search history
+  </Card>
+</CardGroup>
+
+## Data Structures
+
+### countries
+
+```typescript
+type Country = {
+  name: {
+    common: string;      // "Spain"
+    official: string;    // "Kingdom of Spain"
+  };
+  translations: {
+    spa: {
+      common: string;    // "España"
+      official: string;  // "Reino de España"
+    };
+  };
+  capital: string[];     // ["Madrid"]
+  flags: {
+    svg: string;         // URL to flag SVG
+    png: string;         // URL to flag PNG
+    alt: string;         // Alt text
+  };
+  population: number;    // 47351567
+  cca3: string;          // "ESP" (3-letter code)
+};
+```
+
+### history
+
+```typescript
+type HistoryItem = {
+  name: string;         // "España"
+  flags: {
+    svg: string;
+    alt: string;
+  };
+};
+
+type History = HistoryItem[];
+```
+
+## State Initialization
+
+### Initial Countries Fetch
+
+On mount, the provider fetches all countries from the API:
+
+<Steps>
+  <Step title="Set loading to true">
+    Indicates data is being fetched
+  </Step>
+  <Step title="Call getAll() API method">
+    Fetches country data with specific fields: name, capital, flags, population, cca3, translations
+  </Step>
+  <Step title="Update countries state">
+    Stores the response data in context
+  </Step>
+  <Step title="Handle errors">
+    Logs errors to console (consider user-facing error handling)
+  </Step>
+  <Step title="Set loading to false">
+    Always executes in finally block
+  </Step>
+</Steps>
+
+```jsx
+useEffect(() => {
+  const fetchCountries = async () => {
+    try {
+      const res = await getAll();
+      setCountries(res.data);
+    } catch (error) {
+      console.error("Error al obtener países:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchCountries();
+}, []);
+```
+
+### History from localStorage
+
+The history state is initialized with a function to read from localStorage:
+
+```jsx
+const [history, setHistory] = useState(() => {
+  return JSON.parse(localStorage.getItem("history")) || [];
+});
+```
+
+<Note>
+  Using a function for initial state ensures `localStorage` is only read once on mount, not on every render.
+</Note>
+
+## State Persistence
+
+Search history is automatically persisted to localStorage:
+
+```jsx
+useEffect(() => {
+  localStorage.setItem("history", JSON.stringify(history));
+}, [history]);
+```
+
+This effect runs whenever `history` changes, keeping localStorage in sync.
+
+## Consuming the Context
+
+### Basic Usage
+
+```jsx
+import { useCountry } from "../context/CountryContext";
+
+function MyComponent() {
+  const { countries, isLoading } = useCountry();
+
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
+
+  return (
+    <div>
+      <p>Total countries: {countries.length}</p>
+    </div>
+  );
+}
+```
+
+### Reading State
+
+```jsx
+const { countries, history, isLoading } = useCountry();
+```
+
+### Updating State
+
+```jsx
+const { setIsLoading, setHistory } = useCountry();
+
+// Set loading state
+setIsLoading(true);
+
+// Add to history
+setHistory((prev) => [newItem, ...prev]);
+```
+
+## Real Examples from Components
+
+### BuscadorComponent
+
+Reads countries to display count:
+
+```jsx BuscadorComponent.jsx
+import { useCountry } from "../context/CountryContext.jsx";
+
+export const BuscadorComponent = () => {
+  const { countries } = useCountry();
+
+  return (
+    <section className="search-container">
+      <p>
+        Datos disponibles de <b>{`+${countries.length} paises.`}</b>
+      </p>
+    </section>
+  );
+};
+```
+
+### BuscadorCountry
+
+Reads countries for searching, updates loading state:
+
+```jsx BuscadorCountry.jsx
+import { useCountry } from "../context/CountryContext";
+
+function BuscarCountry() {
+  const { countries, setIsLoading } = useCountry();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const pais = countries.find((country) => {
+      // Search logic...
+    });
+
+    if (pais) {
+      setIsLoading(true);
+      navigate(`/country/${normalize(nameCountry)}`);
+    }
+  };
+}
+```
+
+### HistoryComponent
+
+Reads and displays search history:
+
+```jsx HistoryComponent.jsx
+import { useCountry } from "../context/CountryContext";
+
+export function HistoryComponent() {
+  const { history } = useCountry();
+
+  return (
+    <section className="history-container">
+      <h4>Historial de busquedas ({history.length})</h4>
+      <ul>
+        {history.map((country, index) => (
+          <li key={index}>
+            <img src={country.flags.svg} alt={country.flags.alt} />
+            <p>{country.name}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+### useCountryInfo Hook
+
+Accesses countries and updates history and loading state:
+
+```jsx useCountryInfo.js
+import { useCountry } from "../context/CountryContext";
+
+export const useCountryInfo = (name) => {
+  const { countries, setIsLoading, setHistory } = useCountry();
+  const [country, setCountry] = useState({});
+
+  useEffect(() => {
+    const fetchCountry = async () => {
+      setIsLoading(true);
+      // Fetch country details...
+      
+      // Add to history
+      const log = {
+        name: paisData.translations.spa.common,
+        flags: paisData.flags,
+      };
+      setHistory((prev) => {
+        const lastOne = prev[0];
+        if (lastOne && lastOne.name === log.name) return prev;
+        const prevSet = prev.filter((c) => log.name !== c.name);
+        return [log, ...prevSet];
+      });
+      
+      setIsLoading(false);
+    };
+    fetchCountry();
+  }, [name, countries]);
+
+  return { country, countries, handleBack, formatPopulation };
+};
+```
+
+## History Management Logic
+
+The history update logic prevents duplicates and keeps the most recent search at the top:
+
+```jsx
+setHistory((prev) => {
+  const lastOne = prev[0];
+  // Don't add if it's already the most recent
+  if (lastOne && lastOne.name === log.name) return prev;
+  
+  // Remove any existing entry with same name
+  const prevSet = prev.filter((c) => log.name !== c.name);
+  
+  // Add to front
+  return [log, ...prevSet];
+});
+```
+
+<Steps>
+  <Step title="Check if already most recent">
+    If the country is already at position 0, don't update
+  </Step>
+  <Step title="Remove duplicates">
+    Filter out any existing entry with the same name
+  </Step>
+  <Step title="Add to front">
+    Prepend the new entry to the array
+  </Step>
+</Steps>
+
+## Loading Component Integration
+
+The `Loading` component is rendered inside the provider, giving it direct access to `isLoading`:
+
+```jsx
+<CountryContext.Provider value={{ ... }}>
+  <Loading />
+  {children}
+</CountryContext.Provider>
+```
+
+This means:
+- Loading indicator works across all routes
+- No need to import/render Loading in each page
+- Automatically responds to context state changes
+
+<Tip>
+  Rendering `Loading` in the provider is a clever pattern for global UI elements that depend on global state.
+</Tip>
+
+## Best Practices
+
+### Do's
+
+<Check>Use the `useCountry` hook for accessing context</Check>
+<Check>Use functional updates for state that depends on previous state</Check>
+<Check>Keep context focused on truly global state</Check>
+<Check>Handle loading states appropriately in components</Check>
+
+### Don'ts
+
+<Warning>Don't mutate state directly - always use setter functions</Warning>
+<Warning>Don't use context for local component state</Warning>
+<Warning>Don't call hooks conditionally</Warning>
+
+## Performance Considerations
+
+### Context Re-renders
+
+When context value changes, all consuming components re-render. Current considerations:
+
+- `countries` array is set once on mount and rarely changes
+- `isLoading` toggles cause global re-renders (acceptable for this app size)
+- `history` updates are infrequent (only on country view)
+
+### Optimization Opportunities
+
+For larger apps, consider:
+
+```jsx
+// Split context into multiple providers
+<CountriesProvider>
+  <HistoryProvider>
+    <UIProvider> {/* for isLoading */}
+      <App />
+    </UIProvider>
+  </HistoryProvider>
+</CountriesProvider>
+```
+
+Or use `useMemo` to memoize context value:
+
+```jsx
+const value = useMemo(
+  () => ({
+    isLoading,
+    setIsLoading,
+    countries,
+    setCountries,
+    history,
+    setHistory,
+  }),
+  [isLoading, countries, history]
+);
+```
+
+<Note>
+  For Countrysweb's current size, these optimizations aren't necessary. The simple approach works well.
+</Note>

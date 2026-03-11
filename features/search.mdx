@@ -1,0 +1,178 @@
+---
+title: Search Functionality
+description: Learn how the country search works with flexible name and code matching
+---
+
+# Search Functionality
+
+The search feature allows users to find countries by their Spanish name, English name, or ISO CCA3 code. The search is flexible and handles various input formats through text normalization.
+
+## How Search Works
+
+The search implementation uses a normalization function to match user input against the countries database:
+
+<Steps>
+  <Step title="User Input">
+    Enter a country name in Spanish, English, or use the 3-letter CCA3 code (e.g., "México", "Mexico", or "MEX")
+  </Step>
+  
+  <Step title="Text Normalization">
+    The input is normalized to handle:
+    - Case-insensitive matching
+    - Accent removal (México → mexico)
+    - Space and hyphen normalization
+  </Step>
+  
+  <Step title="Database Matching">
+    The system searches through all countries comparing:
+    - Spanish common name (`translations.spa.common`)
+    - English common name (`name.common`)
+    - ISO CCA3 code (`cca3`)
+  </Step>
+  
+  <Step title="Navigation">
+    If found, navigate to the country details page
+    If not found, display an error message
+  </Step>
+</Steps>
+
+## Normalization Function
+
+The `normalize` utility function ensures consistent matching:
+
+```javascript
+export const normalize = (name) => {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\s+/g, "-")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .trim();
+};
+```
+
+<Note>
+  The normalization function converts text to NFD (Canonical Decomposition) format before removing diacritical marks, ensuring characters like "á", "é", "ñ" are properly handled.
+</Note>
+
+## Search Implementation
+
+Here's how the search logic is implemented in the `BuscadorCountry` component:
+
+```jsx
+const handleSearch = (e) => {
+  e.preventDefault();
+  const entry = inputRef.current.value;
+  if (!entry) return;
+  
+  const pais = countries.find((country) => {
+    const nameSpa = country.translations.spa.common;
+    const nameEng = country.name.common;
+    const cca3 = country.cca3;
+
+    return (
+      normalize(nameSpa) === normalize(entry) ||
+      normalize(nameEng) === normalize(entry) ||
+      normalize(cca3) === normalize(entry)
+    );
+  });
+
+  if (!pais) {
+    return setError(true);
+  }
+  
+  setIsLoading(true);
+  const nameCountry = pais.translations.spa.common;
+  navigate(`/country/${normalize(nameCountry)}`);
+};
+```
+
+## Error Handling
+
+The search component provides immediate feedback when a country is not found:
+
+<Tabs>
+  <Tab title="Error State">
+    When a search returns no results:
+    - The search form displays a red border
+    - An error message "Pais no encontrado" appears below the input
+    - The error state persists until the user starts typing again
+  </Tab>
+  
+  <Tab title="Error Recovery">
+    ```jsx
+    const handleFocus = () => {
+      setError(false);
+      inputRef.current.focus();
+    };
+    
+    // Reset error on input change
+    onChange={(e) => {
+      if (e.target.value.length === 0) setError(false);
+    }}
+    ```
+    
+    The error automatically clears when:
+    - User clicks on the input field
+    - User starts typing again
+    - Input field is cleared
+  </Tab>
+</Tabs>
+
+## Search Examples
+
+<AccordionGroup>
+  <Accordion title="Spanish Name Search">
+    ```
+    Input: "Argentina"
+    Match: country.translations.spa.common === "Argentina"
+    Result: Navigate to /country/argentina
+    ```
+  </Accordion>
+  
+  <Accordion title="English Name Search">
+    ```
+    Input: "United States"
+    Match: country.name.common === "United States"
+    Result: Navigate to /country/estados unidos
+    ```
+  </Accordion>
+  
+  <Accordion title="CCA3 Code Search">
+    ```
+    Input: "BRA"
+    Match: country.cca3 === "BRA"
+    Result: Navigate to /country/brasil
+    ```
+  </Accordion>
+  
+  <Accordion title="Accent Handling">
+    ```
+    Input: "Mexico" (without accent)
+    Match: normalize("México") === normalize("Mexico")
+    Result: Navigate to /country/mexico
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## User Experience
+
+<CardGroup cols={2}>
+  <Card title="Flexible Input" icon="keyboard">
+    Users can type in any format - with or without accents, in Spanish or English
+  </Card>
+  
+  <Card title="Instant Feedback" icon="bolt">
+    Error messages appear immediately when a country is not found
+  </Card>
+  
+  <Card title="Auto-Clear Errors" icon="eraser">
+    Error states clear automatically as users type
+  </Card>
+  
+  <Card title="Code Support" icon="code">
+    Power users can search by ISO CCA3 codes for faster access
+  </Card>
+</CardGroup>

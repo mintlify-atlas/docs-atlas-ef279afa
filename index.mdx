@@ -1,97 +1,118 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Countrysweb"
+description: "Explore detailed information about countries worldwide with an intuitive search interface"
 ---
 
-## Setting up
+<div className="hero-section" style={{
+  background: 'linear-gradient(135deg, #00051a 0%, #0f4c75 100%)',
+  padding: '3rem 2rem',
+  borderRadius: '8px',
+  marginBottom: '2rem',
+  color: '#d9d9d9'
+}}>
+  <h1 style={{
+    fontSize: '36px',
+    fontWeight: '700',
+    marginBottom: '1rem',
+    color: '#fbc926'
+  }}>Welcome to Countrysweb</h1>
+  <p style={{
+    fontSize: '18px',
+    marginBottom: '2rem',
+    lineHeight: '1.6'
+  }}>
+    A powerful web application for searching and exploring comprehensive country data. 
+    Discover capitals, populations, languages, borders, and more with an intuitive interface.
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Get Started
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Begin your journey with Countrysweb in just a few steps.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quick Start"
+    icon="rocket"
+    href="/getting-started/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get up and running with Countrysweb in minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Installation"
+    icon="download"
+    href="/getting-started/installation"
   >
-    Customize the design and colors of your site to match your brand.
+    Set up the development environment
   </Card>
-    <Card
-    title="Set up navigation"
+</CardGroup>
+
+## Key Features
+
+Discover what makes Countrysweb powerful and easy to use.
+
+<CardGroup cols={2}>
+  <Card
+    title="Smart Search"
+    icon="magnifying-glass"
+    href="/features/search"
+  >
+    Search countries by name or country code with intelligent matching
+  </Card>
+  <Card
+    title="Country Details"
+    icon="flag"
+    href="/features/country-details"
+  >
+    View comprehensive information including flags, capitals, and population
+  </Card>
+  <Card
+    title="Border Navigation"
     icon="map"
-    href="/essentials/navigation"
+    href="/features/border-navigation"
   >
-    Organize your docs to help users find what they need and succeed with your product.
+    Explore neighboring countries through interactive border links
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
+    title="Search History"
+    icon="clock-rotate-left"
+    href="/features/history"
   >
-    Auto-generate API documentation from OpenAPI specifications.
+    Track and revisit your search history with localStorage persistence
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Developer Resources
 
-Everything you need to create world-class documentation.
+Everything you need to understand and extend Countrysweb.
 
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
+    title="Architecture"
+    icon="sitemap"
+    href="/development/architecture"
   >
-    Use MDX to style your docs pages.
+    Learn about the application structure and design patterns
   </Card>
   <Card
-    title="Code samples"
+    title="Components"
+    icon="cube"
+    href="/development/components"
+  >
+    Explore the React component library
+  </Card>
+  <Card
+    title="Context API"
+    icon="layer-group"
+    href="/development/context-api"
+  >
+    Understand state management with React Context
+  </Card>
+  <Card
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api/overview"
   >
-    Add sample code to demonstrate how to use your product.
+    Complete API documentation for hooks, components, and utilities
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

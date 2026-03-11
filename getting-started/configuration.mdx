@@ -1,0 +1,221 @@
+---
+title: Configuration
+description: Configure Countrysweb for your environment
+---
+
+Learn how to configure Countrysweb's build settings and API endpoints.
+
+## Vite Configuration
+
+Countrysweb uses Vite as its build tool and development server. The configuration is minimal and straightforward:
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react-swc'
+
+export default defineConfig({
+  plugins: [react()],
+})
+```
+
+### Key Features
+
+- **React Plugin**: Uses `@vitejs/plugin-react-swc` for fast React refresh with SWC compilation
+- **Default Settings**: Leverages Vite's sensible defaults for development and production builds
+- **Port**: Development server runs on port 5173 by default
+
+<Note>
+The development server is configured to run with the `--host` flag in package.json, making it accessible from other devices on your network.
+</Note>
+
+### Customizing Vite Configuration
+
+You can extend the Vite configuration for your needs. Common customizations include:
+
+```js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react-swc'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000, // Change the dev server port
+    open: true, // Auto-open browser on server start
+  },
+  build: {
+    outDir: 'dist', // Output directory for production build
+    sourcemap: true, // Generate source maps
+  },
+})
+```
+
+For more configuration options, see the [Vite documentation](https://vite.dev/config/).
+
+## API Configuration
+
+Countrysweb uses Axios to communicate with the REST Countries API. The API client is configured in `src/api/axios.js`:
+
+```js
+// src/api/axios.js
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "https://restcountries.com/v3.1",
+});
+
+export default instance;
+```
+
+### REST Countries API Endpoint
+
+The application uses the REST Countries API v3.1:
+
+- **Base URL**: `https://restcountries.com/v3.1`
+- **Documentation**: [REST Countries API Docs](https://restcountries.com/)
+- **No Authentication Required**: The API is free and doesn't require an API key
+
+### API Usage Example
+
+Here's how the application fetches all countries:
+
+```jsx
+// From src/context/CountryProvider.jsx
+import { getAll } from "../api/country";
+
+useEffect(() => {
+  const fetchCountries = async () => {
+    try {
+      const res = await getAll();
+      setCountries(res.data);
+    } catch (error) {
+      console.error("Error al obtener países:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchCountries();
+}, []);
+```
+
+### Customizing the Axios Instance
+
+You can add interceptors, custom headers, or timeout configurations:
+
+```js
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "https://restcountries.com/v3.1",
+  timeout: 10000, // 10 second timeout
+});
+
+// Request interceptor
+instance.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.url);
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.message);
+    return Promise.reject(error);
+  }
+);
+
+export default instance;
+```
+
+## Environment Variables
+
+While the current implementation uses a hardcoded API URL, you can use environment variables for more flexibility:
+
+<Steps>
+  <Step title="Create environment file">
+    Create a `.env` file in the project root:
+    
+    ```bash
+    VITE_API_BASE_URL=https://restcountries.com/v3.1
+    ```
+    
+    <Warning>
+    Environment variables in Vite must be prefixed with `VITE_` to be exposed to your application.
+    </Warning>
+  </Step>
+
+  <Step title="Update Axios configuration">
+    Modify `src/api/axios.js` to use the environment variable:
+    
+    ```js
+    import axios from "axios";
+
+    const instance = axios.create({
+      baseURL: import.meta.env.VITE_API_BASE_URL,
+    });
+
+    export default instance;
+    ```
+  </Step>
+
+  <Step title="Access in components">
+    You can access environment variables anywhere in your code:
+    
+    ```js
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
+    ```
+  </Step>
+</Steps>
+
+## Local Storage
+
+The application uses browser local storage to persist search history:
+
+```jsx
+// From src/context/CountryProvider.jsx
+const [history, setHistory] = useState(() => {
+  return JSON.parse(localStorage.getItem("history")) || [];
+});
+
+useEffect(() => {
+  localStorage.setItem("history", JSON.stringify(history));
+}, [history]);
+```
+
+- **Storage Key**: `history`
+- **Format**: JSON array of search history items
+- **Persistence**: Survives page refreshes and browser restarts
+
+<Note>
+Local storage is limited to approximately 5-10MB depending on the browser. The search history is unlikely to exceed this limit.
+</Note>
+
+## Build Configuration
+
+To build the application for production:
+
+```bash
+pnpm build
+```
+
+This command:
+1. Bundles the application using Vite
+2. Minifies JavaScript and CSS
+3. Optimizes assets
+4. Outputs to the `dist/` directory
+
+To preview the production build locally:
+
+```bash
+pnpm preview
+```
+
+## Next Steps
+
+- Explore the [API reference](/api-reference) to understand available endpoints
+- Check the [Components guide](/components) to learn about UI components
+- Review the [Deployment guide](/deployment) to publish your application

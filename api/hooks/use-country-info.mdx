@@ -1,0 +1,343 @@
+---
+title: useCountryInfo
+description: Hook for fetching and managing detailed country information
+---
+
+## Overview
+
+The `useCountryInfo` hook fetches detailed country data based on a normalized Spanish country name from the URL. It handles loading states, history tracking, and provides utility functions for the country detail page.
+
+**Location:** `src/hooks/useCountryInfo.js`
+
+## Hook Signature
+
+```javascript
+export const useCountryInfo = (name)
+```
+
+## Parameters
+
+<ParamField path="name" type="string" required>
+  The normalized Spanish country name (typically from URL params)
+  
+  **Example:** `"españa"` (lowercase, normalized)
+</ParamField>
+
+## Return Value
+
+<ResponseField name="countries" type="array">
+  Array of all countries from the global context
+</ResponseField>
+
+<ResponseField name="country" type="object">
+  Detailed data for the requested country. Empty object `{}` while loading or if not found.
+</ResponseField>
+
+<ResponseField name="navigate" type="function">
+  React Router's navigate function for programmatic navigation
+</ResponseField>
+
+<ResponseField name="handleBack" type="function">
+  Function to navigate back to the home page (`"/"`)
+</ResponseField>
+
+<ResponseField name="formatPopulation" type="function">
+  Utility function to format population numbers with commas
+  
+  **Signature:** `(population: number) => string`
+  
+  **Example:** `formatPopulation(47351567)` returns `"47,351,567"`
+</ResponseField>
+
+## Usage
+
+```jsx
+import { useCountryInfo } from "../hooks/useCountryInfo";
+import { useParams } from "react-router-dom";
+
+function CountryInfo() {
+  const { name } = useParams();
+  const { country, handleBack, formatPopulation } = useCountryInfo(name);
+  
+  if (Object.keys(country).length === 0) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div>
+      <button onClick={handleBack}>Back</button>
+      <h1>{country.translations.spa.common}</h1>
+      <p>Population: {formatPopulation(country.population)}</p>
+    </div>
+  );
+}
+```
+
+## Implementation Details
+
+```javascript src/hooks/useCountryInfo.js
+import { useEffect, useState } from "react";
+import { getByName } from "../api/country";
+import { useCountry } from "../context/CountryContext";
+import { useNavigate } from "react-router-dom";
+import { normalize } from "../utils/libs";
+
+export const useCountryInfo = (name) => {
+  const { countries, setIsLoading, setHistory } = useCountry();
+  const [country, setCountry] = useState({});
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCountry = async () => {
+      setIsLoading(true);
+      setCountry({});
+      try {
+        // Find country in local data by Spanish name
+        const pais = countries.find((c) => {
+          return normalize(c.translations.spa.common) === normalize(name);
+        });
+        
+        if (!pais) return;
+        
+        // Fetch full details using English name
+        const { data } = await getByName(pais.name.common);
+        
+        // Find exact match in API response
+        const paisData = data.find((c) => {
+          return normalize(c.translations.spa.common) === normalize(name);
+        });
+        
+        setCountry(paisData);
+        
+        // Add to history
+        const log = {
+          name: paisData.translations.spa.common,
+          flags: paisData.flags,
+        };
+        
+        setHistory((prev) => {
+          const lastOne = prev[0];
+          if (lastOne && lastOne.name === log.name) return prev;
+          const prevSet = prev.filter((c) => log.name !== c.name);
+          return [log, ...prevSet];
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCountry();
+  }, [name, countries]);
+
+  const handleBack = () => {
+    navigate("/");
+  };
+
+  const formatPopulation = (population) => {
+    return population.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  return {
+    countries,
+    country,
+    navigate,
+    handleBack,
+    formatPopulation,
+  };
+};
+```
+
+## Behavior
+
+### 1. Country Lookup
+
+The hook performs a two-step lookup process:
+
+<Steps>
+  <Step title="Local lookup by Spanish name">
+    ```javascript
+    const pais = countries.find((c) => {
+      return normalize(c.translations.spa.common) === normalize(name);
+    });
+    ```
+    Finds the country in the cached list using normalized Spanish name
+  </Step>
+  
+  <Step title="API fetch using English name">
+    ```javascript
+    const { data } = await getByName(pais.name.common);
+    ```
+    Fetches full details from REST Countries API using English name
+  </Step>
+  
+  <Step title="Verify exact match">
+    ```javascript
+    const paisData = data.find((c) => {
+      return normalize(c.translations.spa.common) === normalize(name);
+    });
+    ```
+    Confirms the correct country from potentially multiple results
+  </Step>
+</Steps>
+
+### 2. Loading State Management
+
+```javascript
+setIsLoading(true);  // Start loading
+setCountry({});      // Clear previous country
+
+try {
+  // ... fetch logic
+} finally {
+  setIsLoading(false);  // Always clear loading
+}
+```
+
+### 3. History Tracking
+
+Automatically adds viewed countries to history:
+
+```javascript
+const log = {
+  name: paisData.translations.spa.common,
+  flags: paisData.flags,
+};
+
+setHistory((prev) => {
+  const lastOne = prev[0];
+  // Prevent duplicate consecutive entries
+  if (lastOne && lastOne.name === log.name) return prev;
+  
+  // Remove any existing entry for this country
+  const prevSet = prev.filter((c) => log.name !== c.name);
+  
+  // Add to beginning
+  return [log, ...prevSet];
+});
+```
+
+**Logic:**
+- Skip if country is already the most recent entry
+- Remove any older entries for the same country
+- Add new entry to the beginning of the history array
+
+## Utility Functions
+
+### handleBack()
+
+Navigates to the home page.
+
+```javascript
+const handleBack = () => {
+  navigate("/");
+};
+```
+
+**Usage:**
+```jsx
+<button onClick={handleBack}>Back to Search</button>
+```
+
+### formatPopulation()
+
+Formats population numbers with thousand separators.
+
+```javascript
+const formatPopulation = (population) => {
+  return population.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+```
+
+**Examples:**
+- `47351567` → `"47,351,567"`
+- `1234567890` → `"1,234,567,890"`
+- `1000` → `"1,000"`
+
+## Dependencies
+
+<CodeGroup>
+```javascript Context
+import { useCountry } from "../context/CountryContext";
+
+// Provides:
+// - countries: array
+// - setIsLoading: function
+// - setHistory: function
+```
+
+```javascript API
+import { getByName } from "../api/country";
+
+// Fetches full country details from REST Countries API
+```
+
+```javascript Utilities
+import { normalize } from "../utils/libs";
+
+// Normalizes strings for case-insensitive, accent-insensitive comparison
+```
+</CodeGroup>
+
+## Effect Dependencies
+
+The effect re-runs when:
+
+```javascript
+useEffect(() => {
+  // ... fetch logic
+}, [name, countries]);
+```
+
+- `name` changes (user navigates to different country)
+- `countries` changes (initial load completes)
+
+## Error Handling
+
+The hook handles missing countries gracefully:
+
+```javascript
+const pais = countries.find(...);
+if (!pais) return;  // Exit early if country not found
+```
+
+No error is thrown - the `country` state remains an empty object `{}`.
+
+## Example Usage in Component
+
+```jsx
+import { useParams } from "react-router-dom";
+import { useCountryInfo } from "../hooks/useCountryInfo";
+
+export const CountryInfo = () => {
+  const { name } = useParams();
+  const { country, countries, handleBack, formatPopulation } = useCountryInfo(name);
+
+  if (Object.keys(country).length === 0) {
+    return null; // Still loading
+  }
+
+  return (
+    <section>
+      <button onClick={handleBack}>← Volver</button>
+      
+      <h1>{country.translations.spa.common}</h1>
+      <p>Population: {formatPopulation(country.population)}</p>
+      
+      <h3>Borders:</h3>
+      <ul>
+        {country.borders?.map((borderCode) => {
+          const borderCountry = countries.find((c) => c.cca3 === borderCode);
+          return <li key={borderCode}>{borderCountry?.translations.spa.common}</li>;
+        })}
+      </ul>
+    </section>
+  );
+};
+```
+
+## Related
+
+- [CountryInfo Component](/api/components/country-info) - Main consumer of this hook
+- [getByName API](/api/country-endpoints#getbyname) - API function used internally
+- [CountryContext](/api/context/country-context) - Provides countries and state setters
+- [HistoryComponent](/api/components/history) - Displays the history managed by this hook

@@ -1,0 +1,138 @@
+---
+title: Features
+description: Discover the powerful features that make Countrysweb a comprehensive tool for exploring country information
+---
+
+Countrysweb provides a rich set of features designed to help you discover and explore detailed information about countries around the world. From intelligent search to interactive border navigation, every feature is built with user experience in mind.
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Intelligent Search"
+    icon="magnifying-glass"
+    href="/features/search"
+  >
+    Search countries by Spanish name, English name, or ISO country code (CCA3) with smart matching
+  </Card>
+  <Card
+    title="Detailed Country Information"
+    icon="flag"
+    href="/features/country-details"
+  >
+    View comprehensive data including flags, coats of arms, capitals, regions, population, and languages
+  </Card>
+  <Card
+    title="Border Navigation"
+    icon="map"
+    href="/features/border-navigation"
+  >
+    Explore neighboring countries through interactive border links
+  </Card>
+  <Card
+    title="Search History"
+    icon="clock-rotate-left"
+    href="/features/history"
+  >
+    Track and revisit your recently viewed countries with automatic localStorage persistence
+  </Card>
+</CardGroup>
+
+## Search Capabilities
+
+The search functionality in Countrysweb is designed to be flexible and user-friendly:
+
+- **Multilingual search** - Find countries using their Spanish or English names
+- **Code-based search** - Use ISO 3166-1 alpha-3 (CCA3) country codes
+- **Normalized matching** - Automatic handling of accents and special characters
+- **Real-time validation** - Immediate feedback if a country is not found
+
+<Tip>
+Try searching for "Colombia", "Japan", or "USA" to see the search in action!
+</Tip>
+
+## Country Information Display
+
+Each country detail page provides:
+
+<Steps>
+  <Step title="Visual Elements">
+    - Country flag (SVG format)
+    - Coat of arms (when available)
+    - Dynamic region icons based on continent
+  </Step>
+  <Step title="Basic Information">
+    - Official and common names (in Spanish)
+    - Capital city
+    - Region and continent
+    - Population (formatted with thousands separators)
+  </Step>
+  <Step title="Geographic Data">
+    - List of bordering countries (clickable for easy navigation)
+    - Regional classification
+  </Step>
+  <Step title="Cultural Information">
+    - All official languages with their ISO codes
+    - Translations and alternate names
+  </Step>
+</Steps>
+
+## Interactive Navigation
+
+Navigate seamlessly through country data:
+
+- **Border countries** - Click on any neighboring country to view its details
+- **Search history** - Quickly return to previously viewed countries
+- **Back navigation** - Easy return to the search page from any country detail view
+
+## Data Persistence
+
+Your search history is automatically saved to localStorage, ensuring:
+
+- **Persistence across sessions** - Your history remains even after closing the browser
+- **Duplicate prevention** - Recently viewed countries won't appear multiple times
+- **Privacy-focused** - All data is stored locally on your device
+
+<Note>
+Search history is stored in your browser's localStorage and never sent to any server.
+</Note>
+
+## Multilingual Support
+
+Countrysweb provides comprehensive multilingual support:
+
+- Country names in both **Spanish** and **English**
+- Language information for each country with ISO codes
+- Spanish as the primary display language for country names
+
+## Performance Features
+
+Built for speed and efficiency:
+
+- **Optimized API calls** - Selective field fetching to minimize data transfer
+- **Fast rendering** - React 19 with Vite for optimal performance  
+- **Efficient state management** - Context API for minimal re-renders
+- **Cached data** - Country list loaded once and cached in context
+
+<Info>
+The application fetches only the necessary fields from the REST Countries API, reducing bandwidth and improving load times.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Get Started"
+    icon="rocket"
+    href="/getting-started/quickstart"
+  >
+    Start using Countrysweb in minutes
+  </Card>
+  <Card
+    title="Developer Guide"
+    icon="code"
+    href="/development/architecture"
+  >
+    Learn how to extend and customize Countrysweb
+  </Card>
+</CardGroup>

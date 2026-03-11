@@ -1,0 +1,230 @@
+---
+title: Search History
+description: Learn how search history is tracked and persisted across sessions
+---
+
+# Search History
+
+The search history feature tracks previously viewed countries and persists them in browser localStorage, allowing users to quickly access countries they've searched before.
+
+## How History Works
+
+<Steps>
+  <Step title="Country Visit">
+    When a user views a country details page, it's automatically added to their history
+  </Step>
+  
+  <Step title="Duplicate Prevention">
+    The system prevents duplicate entries and moves existing entries to the top
+  </Step>
+  
+  <Step title="LocalStorage Persistence">
+    History is saved to browser localStorage and restored on page reload
+  </Step>
+  
+  <Step title="Quick Access">
+    Click any history item to instantly navigate back to that country
+  </Step>
+</Steps>
+
+## LocalStorage Persistence
+
+History data is persisted across browser sessions using localStorage:
+
+<Tabs>
+  <Tab title="Initialization">
+    ```jsx
+    const [history, setHistory] = useState(() => {
+      return JSON.parse(localStorage.getItem("history")) || [];
+    });
+    ```
+    
+    On component mount, the history state is initialized from localStorage. If no history exists, it defaults to an empty array.
+  </Tab>
+  
+  <Tab title="Persistence">
+    ```jsx
+    useEffect(() => {
+      localStorage.setItem("history", JSON.stringify(history));
+    }, [history]);
+    ```
+    
+    Whenever the history state changes, it's automatically saved to localStorage.
+  </Tab>
+</Tabs>
+
+<Note>
+  The history persists indefinitely in the browser until the user clears their browser data or localStorage is manually cleared.
+</Note>
+
+## Duplicate Prevention Logic
+
+The application implements smart duplicate handling to keep the history clean:
+
+```javascript
+setHistory((prev) => {
+  const lastOne = prev[0];
+  // Don't add if it's already the most recent item
+  if (lastOne && lastOne.name === log.name) return prev;
+  
+  // Remove any existing entries of this country
+  const prevSet = prev.filter((c) => log.name !== c.name);
+  
+  // Add to the beginning of the array
+  return [log, ...prevSet];
+});
+```
+
+<AccordionGroup>
+  <Accordion title="Scenario 1: Same Country Twice">
+    **User Action:** Views Argentina, then views Argentina again
+    
+    **Result:** History remains unchanged (Argentina stays at position 0)
+    
+    **Logic:** `if (lastOne && lastOne.name === log.name) return prev;`
+  </Accordion>
+  
+  <Accordion title="Scenario 2: Return to Previous Country">
+    **User Action:** Views Argentina → Brazil → Argentina
+    
+    **Result:** Argentina moves back to the top
+    
+    **Before:** [Brazil, Argentina]
+    
+    **After:** [Argentina, Brazil]
+    
+    **Logic:** The filter removes the old Argentina entry, then it's added at the beginning
+  </Accordion>
+  
+  <Accordion title="Scenario 3: New Country">
+    **User Action:** Views Chile for the first time
+    
+    **Result:** Chile is added to the beginning
+    
+    **Before:** [Brazil, Argentina]
+    
+    **After:** [Chile, Brazil, Argentina]
+  </Accordion>
+</AccordionGroup>
+
+## History Data Structure
+
+Each history entry stores minimal data for efficient storage and quick rendering:
+
+```javascript
+const log = {
+  name: paisData.translations.spa.common,
+  flags: paisData.flags,
+};
+```
+
+<Note>
+  Only the country name and flag data are stored in history to keep localStorage usage minimal while providing enough information for the UI.
+</Note>
+
+### Stored Data
+
+| Field | Type | Example | Purpose |
+|-------|------|---------|----------|
+| `name` | string | "Argentina" | Display name and navigation key |
+| `flags.svg` | string | "https://..." | Flag image URL |
+| `flags.alt` | string | "Flag description" | Accessibility text |
+
+## History Component
+
+The `HistoryComponent` displays the search history in a user-friendly list:
+
+```jsx
+export function HistoryComponent() {
+  const { history } = useCountry();
+  const navigate = useNavigate();
+  
+  const handleClick = (country) => {
+    navigate(`/country/${normalize(country)}`);
+  };
+
+  return (
+    <section className="history-container">
+      <h4 className="title">Historial de busquedas ({history.length})</h4>
+      <ul className="history-list">
+        {history.length === 0 && <p>No hay búsquedas recientes</p>}
+        {history.map((country, index) => (
+          <li
+            key={index}
+            className="history-item"
+            onClick={() => handleClick(country.name)}
+          >
+            <img src={country.flags.svg} alt={country.flags.alt} />
+            <p>{country.name}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+## User Experience
+
+<CardGroup cols={2}>
+  <Card title="Empty State" icon="inbox">
+    When no countries have been viewed:
+    
+    "No hay búsquedas recientes"
+  </Card>
+  
+  <Card title="Counter Badge" icon="hashtag">
+    The history count is displayed in the header:
+    
+    "Historial de busquedas (5)"
+  </Card>
+  
+  <Card title="Visual Identification" icon="flag">
+    Each history item shows the country's flag for quick visual identification
+  </Card>
+  
+  <Card title="One-Click Navigation" icon="mouse-pointer">
+    Click any history item to instantly navigate to that country's details
+  </Card>
+</CardGroup>
+
+## History Update Flow
+
+The history is automatically updated when viewing a country through the `useCountryInfo` hook:
+
+<Steps>
+  <Step title="Fetch Country Data">
+    The hook fetches detailed country information from the API
+  </Step>
+  
+  <Step title="Create History Log">
+    ```javascript
+    const log = {
+      name: paisData.translations.spa.common,
+      flags: paisData.flags,
+    };
+    ```
+  </Step>
+  
+  <Step title="Update History State">
+    The `setHistory` function applies duplicate prevention logic and updates the state
+  </Step>
+  
+  <Step title="Persist to LocalStorage">
+    The `useEffect` in CountryProvider automatically saves the updated history
+  </Step>
+</Steps>
+
+<Note>
+  The history update happens automatically - users don't need to take any action to save their search history.
+</Note>
+
+## Privacy Considerations
+
+<Warning>
+  Search history is stored in the browser's localStorage, which means:
+  - History is device-specific (not synced across devices)
+  - History persists even after closing the browser
+  - Clearing browser data will remove the history
+  - Other users on the same device can see the history if they access the application
+</Warning>

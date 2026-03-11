@@ -1,0 +1,269 @@
+---
+title: HistoryComponent
+description: Displays search history with clickable country entries
+---
+
+## Overview
+
+The `HistoryComponent` displays a list of recently viewed countries, stored in localStorage. Each entry is clickable and navigates to the country's detail page.
+
+**Location:** `src/components/HistoryComponent.jsx`
+
+## Component Signature
+
+```javascript
+export function HistoryComponent()
+```
+
+## Props
+
+This component does not accept any props. It retrieves history data from the `CountryContext`.
+
+## Features
+
+- **Persistent storage**: History is saved in localStorage
+- **Interactive entries**: Click any country to view its details
+- **Empty state**: Shows message when no search history exists
+- **Count display**: Shows the number of items in history
+- **Automatic updates**: Syncs with localStorage when history changes
+
+## Usage
+
+```jsx
+import { HistoryComponent } from "./components/HistoryComponent";
+
+function Sidebar() {
+  return (
+    <aside>
+      <HistoryComponent />
+    </aside>
+  );
+}
+```
+
+## Implementation
+
+```javascript src/components/HistoryComponent.jsx
+import { useCountry } from "../context/CountryContext";
+import { useNavigate } from "react-router-dom";
+import { normalize } from "../utils/libs";
+
+export function HistoryComponent() {
+  const { history } = useCountry();
+  const navigate = useNavigate();
+  
+  const handleClick = (country) => {
+    navigate(`/country/${normalize(country)}`);
+  };
+
+  return (
+    <section className="history-container">
+      <h4 className="title">Historial de busquedas ({history.length})</h4>
+      <ul className="history-list">
+        {history.length === 0 && <p>No hay búsquedas recientes</p>}
+        {history.map((country, index) => (
+          <li
+            key={index}
+            className="history-item"
+            onClick={() => {
+              handleClick(country.name);
+            }}
+          >
+            <img src={country.flags.svg} alt={country.flags.alt} />
+            <p>{country.name}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+## Context Values
+
+<ResponseField name="history" type="array">
+  Array of recently viewed countries from `CountryContext`
+  
+  <Expandable title="History Item Structure">
+    <ResponseField name="name" type="string">
+      Spanish common name of the country (e.g., "España")
+    </ResponseField>
+    
+    <ResponseField name="flags" type="object">
+      Flag image data
+      <Expandable title="properties">
+        <ResponseField name="svg" type="string">
+          SVG flag image URL
+        </ResponseField>
+        <ResponseField name="alt" type="string">
+          Alternative text for the flag
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Functions
+
+### handleClick()
+
+Navigates to the country detail page for the clicked history entry.
+
+```javascript
+const handleClick = (country) => {
+  navigate(`/country/${normalize(country)}`);
+};
+```
+
+**Parameters:**
+- `country` (string): The country name from the history item
+
+**Behavior:**
+- Normalizes the country name (lowercase, removes accents)
+- Navigates to `/country/:name` route
+
+## JSX Structure
+
+```jsx
+<section className="history-container">
+  <h4 className="title">
+    Historial de busquedas ({history.length})
+  </h4>
+  
+  <ul className="history-list">
+    {/* Empty state */}
+    {history.length === 0 && <p>No hay búsquedas recientes</p>}
+    
+    {/* History items */}
+    {history.map((country, index) => (
+      <li
+        key={index}
+        className="history-item"
+        onClick={() => handleClick(country.name)}
+      >
+        <img src={country.flags.svg} alt={country.flags.alt} />
+        <p>{country.name}</p>
+      </li>
+    ))}
+  </ul>
+</section>
+```
+
+## CSS Classes
+
+- `.history-container` - Main section wrapper
+- `.title` - History section title
+- `.history-list` - Unordered list of history items
+- `.history-item` - Individual history entry (clickable)
+
+## History Management
+
+History is managed in the `CountryProvider`:
+
+```javascript src/context/CountryProvider.jsx
+const [history, setHistory] = useState(() => {
+  return JSON.parse(localStorage.getItem("history")) || [];
+});
+
+useEffect(() => {
+  localStorage.setItem("history", JSON.stringify(history));
+}, [history]);
+```
+
+### Adding to History
+
+When a user views a country (in `useCountryInfo` hook):
+
+```javascript src/hooks/useCountryInfo.js
+const log = {
+  name: paisData.translations.spa.common,
+  flags: paisData.flags,
+};
+
+setHistory((prev) => {
+  const lastOne = prev[0];
+  // Prevent duplicate if same as most recent
+  if (lastOne && lastOne.name === log.name) return prev;
+  
+  // Remove any existing entry for this country
+  const prevSet = prev.filter((c) => log.name !== c.name);
+  
+  // Add to beginning of array
+  return [log, ...prevSet];
+});
+```
+
+**Logic:**
+1. Create history entry with name and flags
+2. Check if it's already the most recent entry
+3. Remove any older entries for the same country
+4. Add new entry to the beginning
+
+## Example Data
+
+```javascript
+// Example history array
+const history = [
+  {
+    name: "España",
+    flags: {
+      svg: "https://flagcdn.com/es.svg",
+      alt: "The flag of Spain..."
+    }
+  },
+  {
+    name: "Francia",
+    flags: {
+      svg: "https://flagcdn.com/fr.svg",
+      alt: "The flag of France..."
+    }
+  },
+  {
+    name: "Portugal",
+    flags: {
+      svg: "https://flagcdn.com/pt.svg",
+      alt: "The flag of Portugal..."
+    }
+  }
+];
+```
+
+## User Flow
+
+<Steps>
+  <Step title="User searches for a country">
+    Search for "España" using the search component
+  </Step>
+  
+  <Step title="Country is added to history">
+    The `useCountryInfo` hook adds España to the history array
+  </Step>
+  
+  <Step title="History syncs to localStorage">
+    The `CountryProvider` saves the updated history
+  </Step>
+  
+  <Step title="HistoryComponent displays the entry">
+    España appears in the history list with its flag
+  </Step>
+  
+  <Step title="User clicks history entry">
+    Clicking España navigates to `/country/españa`
+  </Step>
+</Steps>
+
+## Empty State
+
+When no history exists:
+
+```jsx
+{history.length === 0 && <p>No hay búsquedas recientes</p>}
+```
+
+Displays: "No hay búsquedas recientes" (No recent searches)
+
+## Related Components
+
+- [CountryProvider](/api/context/country-provider) - Manages history state and localStorage
+- [useCountryInfo Hook](/api/hooks/use-country-info) - Adds countries to history
+- [CountryInfo](/api/components/country-info) - Destination when clicking history items

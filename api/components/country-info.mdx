@@ -1,0 +1,267 @@
+---
+title: CountryInfo
+description: Detailed country information display component
+---
+
+## Overview
+
+The `CountryInfo` component displays comprehensive information about a country, including its flag, coat of arms, capital, region, population, borders, and languages. It uses URL parameters to determine which country to display.
+
+**Location:** `src/components/CountryInfo.jsx`
+
+## Component Signature
+
+```javascript
+export const CountryInfo = ()
+```
+
+## Props
+
+This component does not accept props. It reads the country name from the URL using `useParams()`.
+
+## URL Parameter
+
+<ParamField path="name" type="string" required>
+  The normalized Spanish name of the country (from URL path `/country/:name`)
+  
+  **Example:** `/country/españa`
+</ParamField>
+
+## Features
+
+- **Dual imagery**: Displays both flag and coat of arms
+- **Key statistics**: Shows capital, region, continent, and population
+- **Border countries**: Interactive list of neighboring countries
+- **Languages**: Complete list of official languages
+- **Back navigation**: Button to return to main search page
+- **Conditional rendering**: Only renders when country data is loaded
+
+## Usage
+
+```jsx
+import { CountryInfo } from "./components/CountryInfo";
+import { Route } from "react-router-dom";
+
+function App() {
+  return (
+    <Route path="/country/:name" element={<CountryInfo />} />
+  );
+}
+```
+
+## Dependencies
+
+```javascript
+import { BorderCountry } from "./BorderCountry";
+import { useCountryInfo } from "../hooks/useCountryInfo";
+import { useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Globe,
+  GlobeAmericas,
+  GlobeAsia,
+  GlobeEurope,
+  Home,
+  Persons,
+} from "./Icons";
+```
+
+## Hook Values
+
+The component uses the `useCountryInfo` hook which provides:
+
+<ResponseField name="country" type="object">
+  The full country data object
+</ResponseField>
+
+<ResponseField name="countries" type="array">
+  Array of all countries (used for border country lookups)
+</ResponseField>
+
+<ResponseField name="handleBack" type="function">
+  Function to navigate back to the home page
+</ResponseField>
+
+<ResponseField name="formatPopulation" type="function">
+  Utility function to format population with commas
+</ResponseField>
+
+## Internal Components
+
+### Widget
+
+A reusable component for displaying country statistics.
+
+```javascript
+const Widget = ({ icon, caption, value }) => {
+  return (
+    <div className="column">
+      <h3>{caption}</h3>
+      <p className="row">
+        {icon}
+        {value}
+      </p>
+    </div>
+  );
+};
+```
+
+**Props:**
+
+<ParamField path="icon" type="ReactNode">
+  Icon component to display
+</ParamField>
+
+<ParamField path="caption" type="string">
+  Label for the statistic (e.g., "Capital", "Population")
+</ParamField>
+
+<ParamField path="value" type="string | number">
+  The value to display
+</ParamField>
+
+## Functions
+
+### getContinentIcon()
+
+Returns the appropriate continent icon based on the country's region.
+
+```javascript
+const getContinentIcon = () => {
+  const continents = country.region;
+  if (continents.includes("Europe") || continents.includes("Africa")) {
+    return <GlobeEurope />;
+  }
+  if (continents.includes("Asia") || continents.includes("Australia")) {
+    return <GlobeAsia />;
+  }
+  return <GlobeAmericas />;
+};
+```
+
+**Returns:** The appropriate globe icon component for the region.
+
+## JSX Structure
+
+```jsx
+<section className="country-info">
+  {/* Back button */}
+  <button className="btn-back row" onClick={handleBack}>
+    <ArrowLeft />
+    Volver
+  </button>
+  
+  {/* Header with flag and coat of arms */}
+  <header>
+    <div className="imgs">
+      <img className="bandera" src={country.flags.svg} alt={country.flags.alt} />
+      <img className="escudo" src={country.coatOfArms.svg} alt={country.coatOfArms.alt} />
+    </div>
+    <div className="info">
+      <h1>{country.translations.spa.common}</h1>
+      <span>
+        <h4>Nombre Oficial: </h4>
+        <p>{country.translations.spa.official}</p>
+      </span>
+    </div>
+  </header>
+  
+  {/* Statistics widgets */}
+  <section>
+    <div className="content">
+      <Widget icon={<Home />} caption="Capital" value={country.capital} />
+      <Widget icon={getContinentIcon()} caption="Región" value={country.region} />
+      <Widget icon={<Globe />} caption="Continente" value={country.continents[0]} />
+      <Widget icon={<Persons />} caption="Población" value={formatPopulation(country.population)} />
+    </div>
+    
+    {/* Borders section */}
+    <h3>Fronteras:</h3>
+    {!country.borders && <p>No tiene fronteras</p>}
+    {country.borders && (
+      <ul className="borders-list">
+        {country.borders.map((border, index) => {
+          const bddata = countries.find((c) => c.cca3 === border);
+          return <BorderCountry key={index} country={bddata} />;
+        })}
+      </ul>
+    )}
+    
+    {/* Languages section */}
+    <h3>Idiomas:</h3>
+    <ul className="languages-list">
+      {Object.entries(country.languages).map(([key, lang], index) => {
+        return (
+          <li key={index}>
+            <p>{`${lang} (${key})`}</p>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+</section>
+```
+
+## Conditional Rendering
+
+The component only renders when country data is available:
+
+```javascript
+if (Object.keys(country).length > 0) {
+  return (
+    // ... component JSX
+  );
+}
+```
+
+If the country object is empty, the component returns `undefined` and renders nothing.
+
+## CSS Classes
+
+- `.country-info` - Main section container
+- `.btn-back` - Back button
+- `.row` - Flex row layout
+- `.imgs` - Container for flag and coat of arms
+- `.bandera` - Flag image
+- `.escudo` - Coat of arms image
+- `.info` - Text information container
+- `.content` - Statistics widgets container
+- `.column` - Widget column layout
+- `.borders-list` - Border countries list
+- `.languages-list` - Languages list
+
+## Example Data Flow
+
+<CodeGroup>
+```text URL
+/country/españa
+```
+
+```javascript useParams()
+{ name: "españa" }
+```
+
+```javascript useCountryInfo Hook
+{
+  country: {
+    translations: { spa: { common: "España", official: "Reino de España" } },
+    capital: ["Madrid"],
+    flags: { svg: "...", alt: "..." },
+    coatOfArms: { svg: "...", png: "..." },
+    region: "Europe",
+    continents: ["Europe"],
+    population: 47351567,
+    borders: ["AND", "FRA", "GIB", "PRT", "MAR"],
+    languages: { spa: "Spanish", cat: "Catalan", ... }
+  },
+  handleBack: () => navigate("/"),
+  formatPopulation: (pop) => "47,351,567"
+}
+```
+</CodeGroup>
+
+## Related Components
+
+- [BorderCountry](/api/components/border-country) - Used to display border countries
+- [useCountryInfo Hook](/api/hooks/use-country-info) - Provides all data and functions
+- [Icons](/api/components/icons) - Icon components used throughout

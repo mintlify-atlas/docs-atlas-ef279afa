@@ -1,0 +1,138 @@
+---
+title: Quickstart
+description: Get started with Countrysweb and perform your first country search
+---
+
+This guide will help you go from installation to performing your first country search in minutes.
+
+## Overview
+
+Countrysweb is a React application that allows you to search and explore information about countries worldwide. It uses the REST Countries API to fetch comprehensive country data.
+
+<Steps>
+  <Step title="Start the development server">
+    If you haven't already, start the development server:
+    
+    ```bash
+    pnpm dev
+    ```
+    
+    The application will launch at `http://localhost:5173`.
+  </Step>
+
+  <Step title="Access the home page">
+    Open your browser and navigate to `http://localhost:5173`. You'll see the main search interface with:
+    
+    - A title: "Buscador de Paises" (Country Finder)
+    - The total number of available countries
+    - A search input field
+    - Your search history (if any)
+  </Step>
+
+  <Step title="Search for a country">
+    Enter a country name in the search field. The application supports searching by:
+    
+    - **Spanish name**: "España", "México", "Argentina"
+    - **English name**: "Spain", "Mexico", "Argentina"
+    - **Country code (CCA3)**: "ESP", "MEX", "ARG"
+    
+    <Note>
+    The search is case-insensitive and handles special characters automatically.
+    </Note>
+    
+    Example searches:
+    ```
+    España
+    United States
+    JPN
+    ```
+  </Step>
+
+  <Step title="View country details">
+    After submitting your search, you'll be redirected to a detailed country page at `/country/:name`. This page displays comprehensive information about the selected country.
+    
+    The search term is automatically added to your browsing history, which is stored in your browser's local storage.
+  </Step>
+</Steps>
+
+## How the Search Works
+
+The search functionality is powered by a Context API provider that:
+
+1. **Fetches all countries** on app initialization from the REST Countries API
+2. **Normalizes search input** to handle accents and case sensitivity
+3. **Matches against multiple fields**: Spanish name, English name, and country code
+4. **Stores search history** in local storage for persistence
+
+Here's a simplified example of how the search is implemented:
+
+```jsx
+// From src/components/BuscadorCountry.jsx
+const handleSearch = (e) => {
+  e.preventDefault();
+  const entry = inputRef.current.value;
+  if (!entry) return;
+  
+  const pais = countries.find((country) => {
+    const nameSpa = country.translations.spa.common;
+    const nameEng = country.name.common;
+    const cca3 = country.cca3;
+
+    return (
+      normalize(nameSpa) === normalize(entry) ||
+      normalize(nameEng) === normalize(entry) ||
+      normalize(cca3) === normalize(entry)
+    );
+  });
+
+  if (!pais) {
+    return setError(true);
+  }
+  
+  const nameCountry = pais.translations.spa.common;
+  navigate(`/country/${normalize(nameCountry)}`);
+};
+```
+
+## Application Structure
+
+The application uses React Router DOM for navigation with the following routes:
+
+```jsx
+// From src/App.jsx
+<Routes>
+  <Route path="/" element={<HomePage />} />
+  <Route path="/country/:name" element={<CountryInfo />} />
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+```
+
+- `/` - Home page with search interface and history
+- `/country/:name` - Individual country detail page
+- `*` - All other routes redirect to home
+
+## State Management
+
+The application uses React Context API for global state management:
+
+```jsx
+// From src/main.jsx
+<BrowserRouter>
+  <CountryProvider>
+    <App />
+  </CountryProvider>
+</BrowserRouter>
+```
+
+The `CountryProvider` manages:
+- Loading states
+- Country data fetched from the API
+- Search history stored in local storage
+
+## Next Steps
+
+Now that you understand the basics, explore:
+
+- [Configuration](/getting-started/configuration) - Learn about API configuration and Vite setup
+- The source code in `src/components/` to understand individual components
+- The `src/api/` folder to see how API requests are structured

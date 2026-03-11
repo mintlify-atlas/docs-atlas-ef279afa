@@ -1,0 +1,264 @@
+---
+title: Country Details
+description: Explore comprehensive country information including geography, population, and more
+---
+
+# Country Details
+
+The country details page displays comprehensive information about each country, including flags, coat of arms, geographical data, and demographic information.
+
+## Information Display
+
+Each country detail page presents:
+
+<CardGroup cols={2}>
+  <Card title="Visual Elements" icon="flag">
+    - Country flag (SVG format)
+    - Coat of arms
+    - Region-specific icons
+  </Card>
+  
+  <Card title="Basic Information" icon="info">
+    - Common name (Spanish)
+    - Official name (Spanish)
+    - Capital city
+  </Card>
+  
+  <Card title="Geography" icon="earth-americas">
+    - Region
+    - Continent
+    - Bordering countries
+  </Card>
+  
+  <Card title="Demographics" icon="users">
+    - Population (formatted)
+    - Languages spoken
+    - Language codes
+  </Card>
+</CardGroup>
+
+## Widget Component Pattern
+
+The country details use a reusable `Widget` component to display information consistently:
+
+```jsx
+const Widget = ({ icon, caption, value }) => {
+  return (
+    <div className="column">
+      <h3>{caption}</h3>
+      <p className="row">
+        {icon}
+        {value}
+      </p>
+    </div>
+  );
+};
+```
+
+### Widget Usage Examples
+
+<Tabs>
+  <Tab title="Capital">
+    ```jsx
+    <Widget 
+      icon={<Home />} 
+      caption="Capital" 
+      value={country.capital} 
+    />
+    ```
+  </Tab>
+  
+  <Tab title="Region">
+    ```jsx
+    <Widget
+      icon={getContinentIcon()}
+      caption="Región"
+      value={country.region}
+    />
+    ```
+  </Tab>
+  
+  <Tab title="Continent">
+    ```jsx
+    <Widget
+      icon={<Globe />}
+      caption="Continente"
+      value={country.continents[0]}
+    />
+    ```
+  </Tab>
+  
+  <Tab title="Population">
+    ```jsx
+    <Widget
+      icon={<Persons />}
+      caption="Población"
+      value={formatPopulation(country.population)}
+    />
+    ```
+  </Tab>
+</Tabs>
+
+## Population Formatting
+
+The `formatPopulation` utility function formats large numbers with comma separators for better readability:
+
+```javascript
+const formatPopulation = (population) => {
+  return population.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+```
+
+<Note>
+  This regex-based formatter adds commas every three digits from right to left. For example: `123456789` becomes `123,456,789`
+</Note>
+
+### Formatting Examples
+
+| Raw Value | Formatted Value |
+|-----------|----------------|
+| 1000 | 1,000 |
+| 50000000 | 50,000,000 |
+| 331002651 | 331,002,651 |
+
+## Dynamic Region Icons
+
+The application displays region-specific globe icons based on the country's continent:
+
+```jsx
+const getContinentIcon = () => {
+  const continents = country.region;
+  if (continents.includes("Europe") || continents.includes("Africa")) {
+    return <GlobeEurope />;
+  }
+  if (continents.includes("Asia") || continents.includes("Australia")) {
+    return <GlobeAsia />;
+  }
+  return <GlobeAmericas />;
+};
+```
+
+<AccordionGroup>
+  <Accordion title="Europe & Africa">
+    Countries in Europe or Africa display the `GlobeEurope` icon
+    
+    Examples: Spain, France, Nigeria, South Africa
+  </Accordion>
+  
+  <Accordion title="Asia & Oceania">
+    Countries in Asia or Australia display the `GlobeAsia` icon
+    
+    Examples: Japan, China, Australia, New Zealand
+  </Accordion>
+  
+  <Accordion title="Americas">
+    Countries in North and South America display the `GlobeAmericas` icon
+    
+    Examples: United States, Brazil, Argentina, Canada
+  </Accordion>
+</AccordionGroup>
+
+## Visual Assets
+
+The country details page displays two primary visual elements:
+
+<Tabs>
+  <Tab title="Flag">
+    ```jsx
+    <img
+      className="bandera"
+      src={country.flags.svg}
+      alt={country.flags.alt}
+    />
+    ```
+    
+    Flags are displayed in SVG format for crisp rendering at any size.
+  </Tab>
+  
+  <Tab title="Coat of Arms">
+    ```jsx
+    <img
+      className="escudo"
+      src={country.coatOfArms.svg}
+      alt={country.coatOfArms.alt}
+    />
+    ```
+    
+    Coat of arms provides additional national symbolism when available.
+  </Tab>
+</Tabs>
+
+## Languages Display
+
+Countries with multiple official languages display all languages with their ISO codes:
+
+```jsx
+<h3>Idiomas:</h3>
+<ul className="languages-list">
+  {Object.entries(country.languages).map(([key, lang], index) => {
+    return (
+      <li key={index}>
+        <p>{`${lang} (${key})`}</p>
+      </li>
+    );
+  })}
+</ul>
+```
+
+<Note>
+  The languages object contains key-value pairs where the key is the ISO language code and the value is the language name.
+</Note>
+
+### Language Display Example
+
+For Switzerland, the languages would display as:
+- French (fra)
+- German (deu)
+- Italian (ita)
+- Romansh (roh)
+
+## Border Countries Section
+
+The details page includes a dedicated section for neighboring countries:
+
+```jsx
+<h3>Fronteras:</h3>
+{!country.borders && <p>No tiene fronteras</p>}
+{country.borders && (
+  <ul className="borders-list">
+    {country.borders.map((border, index) => {
+      const bddata = countries.find((c) => c.cca3 === border);
+      return <BorderCountry key={index} country={bddata} />;
+    })}
+  </ul>
+)}
+```
+
+<CardGroup cols={2}>
+  <Card title="Island Nations" icon="water">
+    Countries without land borders display "No tiene fronteras"
+    
+    Examples: Japan, Australia, New Zealand
+  </Card>
+  
+  <Card title="Continental Countries" icon="earth-americas">
+    Countries with borders show clickable neighbor cards for easy navigation
+    
+    See: [Border Navigation](/features/border-navigation)
+  </Card>
+</CardGroup>
+
+## Navigation
+
+Users can return to the home page using the back button:
+
+```jsx
+const handleBack = () => {
+  navigate("/");
+};
+
+<button className="btn-back row" onClick={handleBack}>
+  <ArrowLeft />
+  Volver
+</button>
+```

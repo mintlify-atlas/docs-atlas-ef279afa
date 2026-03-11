@@ -1,0 +1,212 @@
+---
+title: BorderCountry
+description: Interactive border country list item component
+---
+
+## Overview
+
+The `BorderCountry` component renders a clickable list item displaying a bordering country's flag and name. When clicked, it navigates to that country's detail page.
+
+**Location:** `src/components/BorderCountry.jsx`
+
+## Component Signature
+
+```javascript
+export const BorderCountry = ({ country })
+```
+
+## Props
+
+<ParamField path="country" type="object" required>
+  Country object containing flag and translation data
+  
+  <Expandable title="properties">
+    <ParamField path="translations.spa.common" type="string">
+      Spanish common name of the country
+    </ParamField>
+    
+    <ParamField path="flags.png" type="string">
+      URL to the PNG flag image
+    </ParamField>
+    
+    <ParamField path="flags.alt" type="string">
+      Alternative text for the flag image
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Features
+
+- **Null safety**: Returns `null` if no country data provided
+- **Interactive navigation**: Navigates to country detail page on click
+- **Normalized URLs**: Converts country names to lowercase for routing
+- **Visual feedback**: Displays flag thumbnail and country name
+
+## Usage
+
+```jsx
+import { BorderCountry } from "./components/BorderCountry";
+
+function BordersList({ borders, countries }) {
+  return (
+    <ul className="borders-list">
+      {borders.map((borderCode, index) => {
+        const country = countries.find((c) => c.cca3 === borderCode);
+        return <BorderCountry key={index} country={country} />;
+      })}
+    </ul>
+  );
+}
+```
+
+## Implementation
+
+```javascript src/components/BorderCountry.jsx
+import { useNavigate } from "react-router-dom";
+
+export const BorderCountry = ({ country }) => {
+  const navigate = useNavigate();
+
+  if (!country) return null;
+
+  const nameSpa = country.translations.spa.common;
+  const { png: flag, alt } = country.flags;
+
+  const handleSearchBorder = () => {
+    navigate(`/country/${String(nameSpa).toLowerCase()}`);
+  };
+
+  return (
+    <li className="border-country" onClick={handleSearchBorder}>
+      <img src={flag} alt={alt} />
+      <p>{nameSpa}</p>
+    </li>
+  );
+};
+```
+
+## Functions
+
+### handleSearchBorder()
+
+Navigates to the selected border country's detail page.
+
+```javascript
+const handleSearchBorder = () => {
+  navigate(`/country/${String(nameSpa).toLowerCase()}`);
+};
+```
+
+**Behavior:**
+- Converts the Spanish country name to lowercase
+- Navigates to `/country/:name` route
+- Triggers the `CountryInfo` component to load the border country
+
+## JSX Structure
+
+```jsx
+<li className="border-country" onClick={handleSearchBorder}>
+  <img src={flag} alt={alt} />
+  <p>{nameSpa}</p>
+</li>
+```
+
+## CSS Classes
+
+- `.border-country` - List item container (clickable)
+
+## Real-World Example
+
+Used in the `CountryInfo` component to display border countries:
+
+```jsx src/components/CountryInfo.jsx
+<h3>Fronteras:</h3>
+{!country.borders && <p>No tiene fronteras</p>}
+{country.borders && (
+  <ul className="borders-list">
+    {country.borders.map((border, index) => {
+      const bddata = countries.find((c) => c.cca3 === border);
+      return <BorderCountry key={index} country={bddata} />;
+    })}
+  </ul>
+)}
+```
+
+### Data Flow
+
+<CodeGroup>
+```javascript Border Code
+"FRA" // France's cca3 code from Spain's borders array
+```
+
+```javascript Country Lookup
+const bddata = countries.find((c) => c.cca3 === "FRA");
+// Returns:
+{
+  cca3: "FRA",
+  translations: {
+    spa: {
+      common: "Francia"
+    }
+  },
+  flags: {
+    png: "https://flagcdn.com/w320/fr.png",
+    alt: "The flag of France..."
+  }
+}
+```
+
+```jsx Rendered Component
+<BorderCountry country={bddata} />
+// Renders:
+<li className="border-country" onClick={() => navigate("/country/francia")}>
+  <img src="https://flagcdn.com/w320/fr.png" alt="The flag of France..." />
+  <p>Francia</p>
+</li>
+```
+</CodeGroup>
+
+## Navigation Flow
+
+1. User clicks on a border country (e.g., "Francia")
+2. `handleSearchBorder()` is called
+3. Navigation occurs to `/country/francia`
+4. `CountryInfo` component loads with the new country data
+5. Border countries list updates to show France's neighbors
+
+## Null Handling
+
+The component safely handles missing country data:
+
+```javascript
+if (!country) return null;
+```
+
+This prevents errors when:
+- The border code doesn't match any country in the dataset
+- The country prop is `undefined`
+- The countries array is still loading
+
+## Props Example
+
+```javascript
+// Valid country prop
+const country = {
+  translations: {
+    spa: {
+      common: "Francia"
+    }
+  },
+  flags: {
+    png: "https://flagcdn.com/w320/fr.png",
+    alt: "The flag of France features three equal vertical bands of blue, white and red."
+  }
+};
+
+<BorderCountry country={country} />
+```
+
+## Related Components
+
+- [CountryInfo](/api/components/country-info) - Parent component that uses BorderCountry
+- [CountryProvider](/api/context/country-provider) - Provides the countries array for lookups

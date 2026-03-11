@@ -1,0 +1,223 @@
+---
+title: BuscadorCountry (Search)
+description: Search component for finding countries by name or code
+---
+
+## Overview
+
+The `BuscadorCountry` component (also exported as `BuscarCountry`) provides a search form that allows users to find countries by their Spanish name, English name, or ISO 3166-1 alpha-3 code (cca3).
+
+**Location:** `src/components/BuscadorCountry.jsx`
+
+## Component Signature
+
+```javascript
+function BuscarCountry()
+```
+
+## Props
+
+This component does not accept any props.
+
+## Features
+
+- **Multi-language search**: Accepts Spanish names, English names, or cca3 codes
+- **Normalized matching**: Uses case-insensitive, accent-insensitive matching
+- **Error handling**: Shows error message when country is not found
+- **Auto-navigation**: Redirects to country detail page on successful search
+- **Error reset**: Automatically clears error when user starts typing
+
+## Usage
+
+```jsx
+import BuscadorCountry from "./components/BuscadorCountry";
+
+function App() {
+  return (
+    <div>
+      <h1>Country Search</h1>
+      <BuscadorCountry />
+    </div>
+  );
+}
+```
+
+## Implementation Details
+
+### Dependencies
+
+```javascript
+import { useNavigate } from "react-router-dom";
+import { Search } from "./Icons";
+import { useRef, useState } from "react";
+import { useCountry } from "../context/CountryContext";
+import { normalize } from "../utils/libs.js";
+```
+
+### State Management
+
+<ResponseField name="error" type="boolean">
+  Tracks whether the search resulted in no matches. When `true`, displays an error message.
+</ResponseField>
+
+### Context Values
+
+The component uses the following values from `CountryContext`:
+
+<ResponseField name="countries" type="array">
+  Array of all available countries
+</ResponseField>
+
+<ResponseField name="setIsLoading" type="function">
+  Function to set loading state before navigation
+</ResponseField>
+
+### Search Logic
+
+The search algorithm checks three country properties:
+
+1. **Spanish name** (`country.translations.spa.common`)
+2. **English name** (`country.name.common`)
+3. **ISO code** (`country.cca3`)
+
+```javascript
+const pais = countries.find((country) => {
+  const nameSpa = country.translations.spa.common;
+  const nameEng = country.name.common;
+  const cca3 = country.cca3;
+
+  return (
+    normalize(nameSpa) === normalize(entry) ||
+    normalize(nameEng) === normalize(entry) ||
+    normalize(cca3) === normalize(entry)
+  );
+});
+```
+
+## Functions
+
+### handleSearch()
+
+Handles form submission and country search.
+
+```javascript
+const handleSearch = (e) => {
+  e.preventDefault();
+  const entry = inputRef.current.value;
+  if (!entry) return;
+  
+  const pais = countries.find((country) => {
+    // ... search logic
+  });
+
+  if (!pais) {
+    return setError(true);
+  }
+  
+  setIsLoading(true);
+  const nameCountry = pais.translations.spa.common;
+  navigate(`/country/${normalize(nameCountry)}`);
+};
+```
+
+**Behavior:**
+- Prevents default form submission
+- Validates input is not empty
+- Searches for matching country
+- Sets error state if not found
+- Navigates to country detail page if found
+
+### handleFocus()
+
+Resets error state and focuses the input field.
+
+```javascript
+const handleFocus = () => {
+  setError(false);
+  inputRef.current.focus();
+};
+```
+
+## JSX Structure
+
+```jsx
+<form
+  className={`search-form ${error ? "error" : ""}`}
+  onClick={handleFocus}
+  onSubmit={handleSearch}
+  onChange={(e) => {
+    if (e.target.value.length === 0) setError(false);
+  }}
+>
+  <input
+    ref={inputRef}
+    type="text"
+    placeholder="Ingrese un pais para empezar la busqueda."
+    onChange={(e) => {
+      if (e.target.value.length === 0) setError(false);
+    }}
+  />
+  <button>
+    <Search />
+  </button>
+  <p className={`error ${error ? "" : "hidden"}`}>
+    Pais no encontrado
+  </p>
+</form>
+```
+
+## CSS Classes
+
+- `.search-form` - Main form container
+- `.search-form.error` - Applied when search fails
+- `.error` - Error message paragraph
+- `.error.hidden` - Hides error message
+
+## Example Searches
+
+<CodeGroup>
+```text Spanish Name
+España → Navigates to /country/españa
+```
+
+```text English Name  
+Spain → Navigates to /country/españa
+```
+
+```text ISO Code
+ESP → Navigates to /country/españa
+```
+</CodeGroup>
+
+## Parent Component
+
+This component is typically used within `BuscadorComponent`:
+
+```jsx src/components/BuscadorComponent.jsx
+import Buscador from "./BuscadorCountry.jsx";
+
+export const BuscadorComponent = () => {
+  const { countries } = useCountry();
+
+  return (
+    <section className="search-container">
+      <header>
+        <h1 className="title row">
+          Buscador de Paises
+          <Globe />
+        </h1>
+        <p>
+          Datos disponibles de <b>{`+${countries.length} paises.`}</b>
+        </p>
+      </header>
+      <Buscador />
+    </section>
+  );
+};
+```
+
+## Related Components
+
+- [BuscadorComponent](/api/components/search#parent-component) - Parent wrapper
+- [CountryInfo](/api/components/country-info) - Destination after successful search
+- [CountryProvider](/api/context/country-provider) - Provides country data

@@ -1,0 +1,448 @@
+---
+title: CountryContext
+description: React context for global country state management
+---
+
+## Overview
+
+The `CountryContext` is a React context that provides global state for countries, loading status, and search history. It's consumed via the `useCountry` hook and provided by the `CountryProvider` component.
+
+**Location:** `src/context/CountryContext.jsx`
+
+## Context Definition
+
+```javascript
+import { createContext, useContext } from "react";
+
+export const CountryContext = createContext();
+
+export const useCountry = () => useContext(CountryContext);
+```
+
+## Context Shape
+
+The context provides the following values:
+
+```typescript
+type CountryContextValue = {
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  countries: Country[];
+  setCountries: (countries: Country[]) => void;
+  history: HistoryItem[];
+  setHistory: (history: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => void;
+}
+```
+
+## Context Values
+
+### State Values
+
+<ResponseField name="isLoading" type="boolean">
+  Indicates whether an async operation is in progress
+  
+  **Use cases:**
+  - Initial country data loading
+  - Navigation to country detail pages
+  - Any async operation requiring a loading indicator
+</ResponseField>
+
+<ResponseField name="countries" type="array">
+  Complete list of all countries from the REST Countries API
+  
+  <Expandable title="Country Object Structure">
+    <ResponseField name="name" type="object">
+      Country name information
+      <Expandable title="properties">
+        <ResponseField name="common" type="string">
+          Common English name (e.g., "Spain")
+        </ResponseField>
+        <ResponseField name="official" type="string">
+          Official English name (e.g., "Kingdom of Spain")
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="capital" type="array">
+      Array of capital city names
+    </ResponseField>
+    
+    <ResponseField name="flags" type="object">
+      Flag image URLs
+      <Expandable title="properties">
+        <ResponseField name="svg" type="string">
+          SVG flag URL
+        </ResponseField>
+        <ResponseField name="png" type="string">
+          PNG flag URL
+        </ResponseField>
+        <ResponseField name="alt" type="string">
+          Alternative text description
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="population" type="number">
+      Population count
+    </ResponseField>
+    
+    <ResponseField name="cca3" type="string">
+      ISO 3166-1 alpha-3 country code
+    </ResponseField>
+    
+    <ResponseField name="translations" type="object">
+      Country name translations
+      <Expandable title="properties">
+        <ResponseField name="spa" type="object">
+          Spanish translation
+          <Expandable title="properties">
+            <ResponseField name="common" type="string">
+              Common Spanish name
+            </ResponseField>
+            <ResponseField name="official" type="string">
+              Official Spanish name
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="history" type="array">
+  Recently viewed countries (persisted in localStorage)
+  
+  <Expandable title="History Item Structure">
+    <ResponseField name="name" type="string">
+      Spanish common name of the country
+      
+      **Example:** `"España"`
+    </ResponseField>
+    
+    <ResponseField name="flags" type="object">
+      Flag image data
+      <Expandable title="properties">
+        <ResponseField name="svg" type="string">
+          SVG flag image URL
+        </ResponseField>
+        <ResponseField name="alt" type="string">
+          Alternative text for accessibility
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Setter Functions
+
+<ResponseField name="setIsLoading" type="function">
+  Updates the loading state
+  
+  **Signature:** `(loading: boolean) => void`
+  
+  **Example:**
+  ```javascript
+  setIsLoading(true);  // Show loading indicator
+  setIsLoading(false); // Hide loading indicator
+  ```
+</ResponseField>
+
+<ResponseField name="setCountries" type="function">
+  Updates the countries array
+  
+  **Signature:** `(countries: array) => void`
+  
+  **Example:**
+  ```javascript
+  setCountries(apiResponse.data);
+  ```
+</ResponseField>
+
+<ResponseField name="setHistory" type="function">
+  Updates the history array (syncs to localStorage)
+  
+  **Signature:** `(history: array | function) => void`
+  
+  **Examples:**
+  ```javascript
+  // Direct update
+  setHistory([newItem, ...oldHistory]);
+  
+  // Functional update (recommended)
+  setHistory((prev) => {
+    const filtered = prev.filter(item => item.name !== newItem.name);
+    return [newItem, ...filtered];
+  });
+  ```
+</ResponseField>
+
+## Usage
+
+### Consuming the Context
+
+Use the `useCountry` hook to access the context:
+
+```javascript
+import { useCountry } from "../context/CountryContext";
+
+function MyComponent() {
+  const { countries, isLoading, history } = useCountry();
+  
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div>
+      <p>{countries.length} countries loaded</p>
+      <p>{history.length} items in history</p>
+    </div>
+  );
+}
+```
+
+### Provider Setup
+
+The context is provided by `CountryProvider`:
+
+```javascript
+import { CountryProvider } from "./context/CountryProvider";
+import App from "./App";
+
+function Root() {
+  return (
+    <CountryProvider>
+      <App />
+    </CountryProvider>
+  );
+}
+```
+
+## Real-World Examples
+
+### Example 1: Search Component
+
+```javascript src/components/BuscadorCountry.jsx
+import { useCountry } from "../context/CountryContext";
+
+function BuscarCountry() {
+  const { countries, setIsLoading } = useCountry();
+  const navigate = useNavigate();
+  
+  const handleSearch = (searchTerm) => {
+    const country = countries.find(c => 
+      c.translations.spa.common.toLowerCase() === searchTerm.toLowerCase()
+    );
+    
+    if (country) {
+      setIsLoading(true);
+      navigate(`/country/${country.translations.spa.common.toLowerCase()}`);
+    }
+  };
+  
+  return (
+    <input
+      type="text"
+      placeholder="Search countries..."
+      onChange={(e) => handleSearch(e.target.value)}
+    />
+  );
+}
+```
+
+### Example 2: History Display
+
+```javascript src/components/HistoryComponent.jsx
+import { useCountry } from "../context/CountryContext";
+
+export function HistoryComponent() {
+  const { history } = useCountry();
+  const navigate = useNavigate();
+  
+  return (
+    <div>
+      <h4>Historial ({history.length})</h4>
+      <ul>
+        {history.map((country, index) => (
+          <li
+            key={index}
+            onClick={() => navigate(`/country/${country.name.toLowerCase()}`)}
+          >
+            <img src={country.flags.svg} alt={country.flags.alt} />
+            <span>{country.name}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### Example 3: Adding to History
+
+```javascript src/hooks/useCountryInfo.js
+import { useCountry } from "../context/CountryContext";
+
+export const useCountryInfo = (name) => {
+  const { setHistory } = useCountry();
+  
+  const addToHistory = (countryData) => {
+    const log = {
+      name: countryData.translations.spa.common,
+      flags: countryData.flags,
+    };
+    
+    setHistory((prev) => {
+      // Don't duplicate if it's already the most recent
+      if (prev[0]?.name === log.name) return prev;
+      
+      // Remove any existing entry for this country
+      const filtered = prev.filter(c => c.name !== log.name);
+      
+      // Add to the beginning
+      return [log, ...filtered];
+    });
+  };
+  
+  return { addToHistory };
+};
+```
+
+## Context Provider Implementation
+
+See the full provider implementation:
+
+```javascript src/context/CountryProvider.jsx
+import { useState, useEffect } from "react";
+import { CountryContext } from "./CountryContext";
+import { getAll } from "../api/country";
+
+export const CountryProvider = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [countries, setCountries] = useState([]);
+  const [history, setHistory] = useState(() => {
+    return JSON.parse(localStorage.getItem("history")) || [];
+  });
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await getAll();
+        setCountries(res.data);
+      } catch (error) {
+        console.error("Error al obtener países:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("history", JSON.stringify(history));
+  }, [history]);
+
+  return (
+    <CountryContext.Provider
+      value={{
+        isLoading,
+        setIsLoading,
+        countries,
+        setCountries,
+        history,
+        setHistory,
+      }}
+    >
+      {children}
+    </CountryContext.Provider>
+  );
+};
+```
+
+## Type Safety
+
+For TypeScript projects, define the context type:
+
+```typescript
+interface Country {
+  name: {
+    common: string;
+    official: string;
+  };
+  capital: string[];
+  flags: {
+    svg: string;
+    png: string;
+    alt: string;
+  };
+  population: number;
+  cca3: string;
+  translations: {
+    spa: {
+      common: string;
+      official: string;
+    };
+  };
+}
+
+interface HistoryItem {
+  name: string;
+  flags: {
+    svg: string;
+    alt: string;
+  };
+}
+
+interface CountryContextValue {
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  countries: Country[];
+  setCountries: (countries: Country[]) => void;
+  history: HistoryItem[];
+  setHistory: (history: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => void;
+}
+
+export const CountryContext = createContext<CountryContextValue | undefined>(undefined);
+```
+
+## Best Practices
+
+### 1. Always Use the Hook
+
+```javascript
+// ✅ Good
+import { useCountry } from "../context/CountryContext";
+const { countries } = useCountry();
+
+// ❌ Bad
+import { CountryContext } from "../context/CountryContext";
+const value = useContext(CountryContext);
+```
+
+### 2. Destructure Only What You Need
+
+```javascript
+// ✅ Good - only causes re-renders when countries changes
+const { countries } = useCountry();
+
+// ⚠️ Okay but less optimal
+const context = useCountry();
+return <div>{context.countries.length}</div>;
+```
+
+### 3. Use Functional Updates for History
+
+```javascript
+// ✅ Good - uses previous state
+setHistory((prev) => [newItem, ...prev]);
+
+// ❌ Bad - may use stale state
+setHistory([newItem, ...history]);
+```
+
+## Related
+
+- [CountryProvider](/api/context/country-provider) - The provider component
+- [useCountry Hook](/api/hooks/use-country) - Hook for consuming the context
+- [useCountryInfo Hook](/api/hooks/use-country-info) - Hook that uses this context
+- [API Overview](/api/overview) - The API that populates this context

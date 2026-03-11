@@ -1,0 +1,261 @@
+---
+title: Country API Endpoints
+description: API functions for fetching country data from REST Countries API
+---
+
+## Overview
+
+The country API module provides two core functions for retrieving country data. These functions are located in `src/api/country.js` and use the configured Axios instance.
+
+## getAll()
+
+Fetches all countries from the REST Countries API with optimized fields.
+
+### Function Signature
+
+```javascript
+export const getAll = () =>
+  axios.get("/all?fields=name,capital,flags,population,cca3,translations");
+```
+
+### Usage
+
+```javascript
+import { getAll } from "./api/country";
+
+const fetchCountries = async () => {
+  try {
+    const response = await getAll();
+    const countries = response.data;
+    console.log(`Loaded ${countries.length} countries`);
+  } catch (error) {
+    console.error("Error fetching countries:", error);
+  }
+};
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of country objects
+  
+  <Expandable title="Country Object Properties">
+    <ResponseField name="name" type="object">
+      Country name information
+      <Expandable title="properties">
+        <ResponseField name="common" type="string">
+          Common English name (e.g., "Spain")
+        </ResponseField>
+        <ResponseField name="official" type="string">
+          Official English name (e.g., "Kingdom of Spain")
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="capital" type="array">
+      Array of capital city names
+    </ResponseField>
+    
+    <ResponseField name="flags" type="object">
+      Flag image URLs
+      <Expandable title="properties">
+        <ResponseField name="svg" type="string">
+          SVG flag image URL
+        </ResponseField>
+        <ResponseField name="png" type="string">
+          PNG flag image URL
+        </ResponseField>
+        <ResponseField name="alt" type="string">
+          Alternative text description
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="population" type="number">
+      Population count
+    </ResponseField>
+    
+    <ResponseField name="cca3" type="string">
+      ISO 3166-1 alpha-3 country code (e.g., "ESP")
+    </ResponseField>
+    
+    <ResponseField name="translations" type="object">
+      Country name translations
+      <Expandable title="properties">
+        <ResponseField name="spa" type="object">
+          Spanish translation
+          <Expandable title="properties">
+            <ResponseField name="common" type="string">
+              Common Spanish name (e.g., "España")
+            </ResponseField>
+            <ResponseField name="official" type="string">
+              Official Spanish name
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "name": {
+        "common": "Spain",
+        "official": "Kingdom of Spain"
+      },
+      "capital": ["Madrid"],
+      "flags": {
+        "svg": "https://flagcdn.com/es.svg",
+        "png": "https://flagcdn.com/w320/es.png",
+        "alt": "The flag of Spain..."
+      },
+      "population": 47351567,
+      "cca3": "ESP",
+      "translations": {
+        "spa": {
+          "common": "España",
+          "official": "Reino de España"
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+## getByName()
+
+Fetches detailed information for a specific country by name.
+
+### Function Signature
+
+```javascript
+export const getByName = (name) => {
+  return axios.get(`/name/${name}`);
+};
+```
+
+### Parameters
+
+<ParamField path="name" type="string" required>
+  The country name to search for. Can be the common or official name in any language.
+  
+  **Examples:**
+  - "Spain"
+  - "España" 
+  - "Espagne"
+</ParamField>
+
+### Usage
+
+```javascript
+import { getByName } from "./api/country";
+
+const fetchSpain = async () => {
+  try {
+    const { data } = await getByName("Spain");
+    const country = data[0]; // API returns array
+    console.log(country.translations.spa.common); // "España"
+  } catch (error) {
+    console.error("Country not found:", error);
+  }
+};
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of matching country objects (usually contains one country)
+  
+  <Expandable title="Country Object Properties (Full)">
+    <ResponseField name="name" type="object">
+      Complete name information
+    </ResponseField>
+    
+    <ResponseField name="translations" type="object">
+      Name translations in multiple languages
+    </ResponseField>
+    
+    <ResponseField name="capital" type="array">
+      Capital city names
+    </ResponseField>
+    
+    <ResponseField name="flags" type="object">
+      Flag image URLs (svg, png, alt)
+    </ResponseField>
+    
+    <ResponseField name="coatOfArms" type="object">
+      Coat of arms images
+      <Expandable title="properties">
+        <ResponseField name="svg" type="string">
+          SVG coat of arms URL
+        </ResponseField>
+        <ResponseField name="png" type="string">
+          PNG coat of arms URL
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="population" type="number">
+      Population count
+    </ResponseField>
+    
+    <ResponseField name="region" type="string">
+      Geographic region (e.g., "Europe", "Americas")
+    </ResponseField>
+    
+    <ResponseField name="continents" type="array">
+      Array of continent names
+    </ResponseField>
+    
+    <ResponseField name="borders" type="array" optional>
+      Array of bordering country codes (cca3 format). Undefined if no borders.
+    </ResponseField>
+    
+    <ResponseField name="languages" type="object">
+      Object mapping language codes to language names
+      
+      **Example:**
+      ```json
+      {
+        "spa": "Spanish",
+        "cat": "Catalan"
+      }
+      ```
+    </ResponseField>
+    
+    <ResponseField name="cca3" type="string">
+      ISO 3166-1 alpha-3 code
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Real-World Usage
+
+This endpoint is used by the `useCountryInfo` hook to fetch detailed country data:
+
+```javascript src/hooks/useCountryInfo.js
+const { data } = await getByName(pais.name.common);
+const paisData = data.find((c) => {
+  return normalize(c.translations.spa.common) === normalize(name);
+});
+```
+
+## API Endpoint URLs
+
+Both functions use the REST Countries API v3.1:
+
+- **Base URL:** `https://restcountries.com/v3.1`
+- **Get All:** `GET /all?fields=name,capital,flags,population,cca3,translations`
+- **Get by Name:** `GET /name/{name}`
+
+## See Also
+
+- [API Overview](/api/overview) - Introduction to the API layer
+- [useCountryInfo Hook](/api/hooks/use-country-info) - Hook that uses these endpoints
