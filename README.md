@@ -1,28 +1,16 @@
-# Mintlify Starter Kit
+# Countrysweb Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Official documentation for Countrysweb - a web application for searching and exploring detailed information about countries worldwide.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## About
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+Countrysweb is built with React and Vite, providing a fast and intuitive interface for discovering country data including:
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
-
-## AI-assisted writing
-
-Set up your AI coding tool to work with Mintlify:
-
-```bash
-npx skills add https://mintlify.com/docs
-```
-
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
-
-See the [AI tools guides](/ai-tools) for tool-specific setup.
+- Search by country name or code
+- View flags, capitals, and populations
+- Explore neighboring countries
+- Track search history
+- Multilingual support (Spanish and English)
 
 ## Development
 
